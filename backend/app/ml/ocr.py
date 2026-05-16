@@ -90,22 +90,28 @@ class HandwritingOCR:
     @staticmethod
     def _split_into_lines(
         image: Image.Image,
-        min_line_height: int = 30,
-        gap_ratio: float = 0.15,
-        min_gap_rows: int = 3,
+        min_line_height: int = 25,
+        gap_ratio: float = 0.08,
+        min_gap_rows: int = 2,
         raw_image: Image.Image | None = None,
-        padding_y: int = 15,
+        padding_y: int = 12,
     ) -> list[Image.Image]:
         """
-        Adaptive horizontal-projection line segmentation.
+        Improved adaptive horizontal-projection line segmentation.
+        Uses a smaller gap_ratio and padding to avoid cutting off cursive tails (like 'g', 'y').
         """
         import numpy as np
 
         gray = np.array(image.convert("L"))                      # H x W
+        # Invert: text is now high values, background is low
         row_darkness = (255 - gray).sum(axis=1).astype(float)   # dark energy per row
 
+        # Normalise darkness to 0-1 range
+        if row_darkness.max() > 0:
+            row_darkness /= row_darkness.max()
+
         # Light smoothing to suppress single-pixel noise spikes
-        kernel = np.ones(5) / 5
+        kernel = np.ones(7) / 7
         smoothed = np.convolve(row_darkness, kernel, mode="same")
 
         # Adaptive threshold: rows below this are "gap" rows
@@ -117,12 +123,9 @@ class HandwritingOCR:
         if raw_image is not None:
             scale_y = raw_image.height / image.height
 
-        # Walk through and collect text bands
         crops: list[Image.Image] = []
         H = len(is_gap)
         i = 0
-
-        # Source image to crop from
         src_img = raw_image if raw_image is not None else image
 
         while i < H:
@@ -131,13 +134,27 @@ class HandwritingOCR:
                 while i < H and not is_gap[i]:
                     i += 1
                 band_end = i
+                
+                # Look ahead for very small gaps (noise or small spacing between lines)
+                # If the gap is tiny, merge with next line
+                while i < H:
+                    gap_search_start = i
+                    while i < H and is_gap[i]:
+                        i += 1
+                    gap_size = i - gap_search_start
+                    if gap_size < min_gap_rows and i < H:
+                        while i < H and not is_gap[i]:
+                            i += 1
+                        band_end = i
+                    else:
+                        break
+
                 height = band_end - band_start
                 if height >= min_line_height:
-                    # Scale coordinates back to raw image size
                     raw_start = int(band_start * scale_y)
                     raw_end = int(band_end * scale_y)
                     
-                    # Add padding, bounded by the image dimensions
+                    # Add padding
                     raw_start = max(0, raw_start - padding_y)
                     raw_end = min(src_img.height, raw_end + padding_y)
                     
@@ -145,5 +162,4 @@ class HandwritingOCR:
             else:
                 i += 1
 
-        # Fall back to the full image if segmentation found nothing
         return crops if crops else [src_img]

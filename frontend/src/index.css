@@ -118,3 +118,7 @@
 .accent-glow {
   box-shadow: 0 0 15px -3px var(--color-primary);
 }
+
+button {
+  cursor: pointer;
+}

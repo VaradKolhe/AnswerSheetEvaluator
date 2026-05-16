@@ -13,7 +13,7 @@ import { apiService } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 
 // Set up PDF worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const GradingStudio: React.FC = () => {
   const { submissionId } = useParams<{ submissionId: string }>();

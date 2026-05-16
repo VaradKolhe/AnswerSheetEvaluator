@@ -6,11 +6,12 @@ import os
 from app.ml.ocr import HandwritingOCR
 from app.ml.grader import SemanticGrader
 from app.ml.keyword_checker import KeywordChecker
+from app.ml.segmenter import SmartSegmenter
 from app.ml.report import build_report
 from app.ml.config import DEFAULT_SCORE_WEIGHTS
 from app.utils.pdf_utils import convert_pdf_to_images
 
-# Singleton instances to avoid re-loading models on every request
+# Singleton instances
 _ocr_engine = None
 _semantic_grader = None
 _keyword_checker = None
@@ -31,11 +32,7 @@ async def process_full_grading(
     questions: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
-    The "All-in-One" Orchestrator:
-    1. Splits PDF into images.
-    2. Runs OCR on each page.
-    3. Aggregates text.
-    4. Grades each question against the aggregated text.
+    Improved Orchestrator with Answer Segmentation.
     """
     
     # 1. Split PDF into images
@@ -47,25 +44,36 @@ async def process_full_grading(
     # 2. Extract text from all pages
     all_text_parts = []
     for img_p in image_paths:
-        # Run in thread pool since TrOCR is CPU/GPU intensive and synchronous
         text = await asyncio.to_thread(ocr.extract, img_p)
         all_text_parts.append(text)
     
     aggregated_text = "\n".join(all_text_parts)
     
-    # 3. Grade each question
+    # 3. SEGMENT TEXT (Identify which part belongs to which question)
+    segmenter = SmartSegmenter(question_count=len(questions))
+    segmented_answers = segmenter.segment_text(aggregated_text)
+    
+    # 4. Grade each question against its OWN segment
     question_results = []
     total_ai_marks = 0
     
     for q in questions:
+        q_no = q["question_no"]
+        # Use segmented text if available, otherwise fallback to full text
+        answer_to_grade = segmented_answers.get(q_no, aggregated_text)
+        
+        # Fallback: if segmenter failed (returned empty), use full text
+        if not answer_to_grade.strip():
+            answer_to_grade = aggregated_text
+
         # Semantic Score
         sem_score, sem_rationale = await asyncio.to_thread(
-            grader.score, aggregated_text, q["expected_answer"]
+            grader.score, answer_to_grade, q["expected_answer"]
         )
         
         # Keyword Score
         kw_score, kw_rationale, kw_details = await asyncio.to_thread(
-            checker.check, aggregated_text, q["keywords"]
+            checker.check, answer_to_grade, q["keywords"]
         )
         
         # Calculate marks
@@ -75,14 +83,14 @@ async def process_full_grading(
         
         question_results.append({
             "question_id": q["question_id"],
-            "question_no": q["question_no"],
-            "extracted_answer": aggregated_text, # Using full text for now
+            "question_no": q_no,
+            "extracted_answer": answer_to_grade,
             "matched_keywords": [d["keyword"] for d in kw_details if d["found"]],
             "missing_keywords": [d["keyword"] for d in kw_details if not d["found"]],
             "ai_marks": ai_marks,
             "final_marks": ai_marks,
             "max_marks": q["max_marks"],
-            "confidence": round(sem_score, 2), # Using semantic score as confidence
+            "confidence": round(sem_score, 2),
             "teacher_comment": "",
             "semantic_rationale": sem_rationale,
             "keyword_rationale": kw_rationale
