@@ -1,0 +1,21 @@
+fastapi
+uvicorn
+motor
+pydantic
+email-validator
+python-multipart
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+reportlab
+# ML Dependencies
+torch>=2.2.0
+transformers>=4.40.0
+sentence-transformers>=2.7.0
+opencv-python>=4.9.0
+numpy>=1.26.0
+Pillow>=10.3.0
+PyMuPDF>=1.24.0
+sentencepiece
+accelerate
