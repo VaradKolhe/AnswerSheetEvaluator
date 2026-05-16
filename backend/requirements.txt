@@ -11,7 +11,7 @@ bcrypt==4.0.1
 reportlab
 # ML Dependencies
 torch>=2.2.0
-transformers>=4.40.0
+transformers[vision,sentencepiece]>=4.40.0
 sentence-transformers>=2.7.0
 opencv-python>=4.9.0
 numpy>=1.26.0
@@ -19,3 +19,5 @@ Pillow>=10.3.0
 PyMuPDF>=1.24.0
 sentencepiece
 accelerate
+protobuf
+timm
