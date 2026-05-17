@@ -1,52 +1,59 @@
 import re
-from typing import List, Dict, Any
+from typing import Dict
+
+def segment_answers(text: str) -> Dict[int, str]:
+    """
+    Splits the aggregated text into logical segments based on answer markers.
+    EXACTLY mirrors final_answersheet_evaluator.py logic.
+    """
+    # This pattern catches "Ans", "Answer", "Q", "Question" followed by optional noise and numbers.
+    # It also looks for these markers after a period or newline to handle fused text.
+    marker_pattern = re.compile(r'(?i)(?:\b|\.|\n)\s*(?:ans|answer|q|question)[a-z]*\W*\d*[:\s-]*')
+    
+    matches = list(marker_pattern.finditer(text))
+    
+    if not matches:
+        return {1: text.strip()}
+
+    segments = {}
+    q_no = 1
+    
+    for i in range(len(matches)):
+        start = matches[i].end()
+        end = matches[i+1].start() if i+1 < len(matches) else len(text)
+        
+        # Capture the content between markers
+        content = text[start:end].strip()
+        
+        # Basic cleanup of leftovers like "Answer>" or lingering punctuation
+        content = re.sub(r'^[>\W]+', '', content).strip()
+        
+        # Only add if it's not empty (handles consecutive noise markers)
+        if content:
+            segments[q_no] = content
+            q_no += 1
+        elif i == len(matches) - 1:
+            # If the last marker is empty (e.g., student wrote "Ans 3:" but left it blank)
+            segments[q_no] = ""
+            q_no += 1
+            
+    return segments
 
 class SmartSegmenter:
     """
-    Identifies question boundaries in extracted text to assign blocks 
-    of text to specific questions. Ignores OCR noise like "AnsW1", "Anst", 
-    or nested "Question> Answer>".
+    Wrapper for the static segment_answers logic to maintain compatibility 
+    with existing orchestrator.
     """
-    
-    def __init__(self, question_count: int):
+    def __init__(self, question_count: int = 0):
         self.question_count = question_count
-        # This pattern catches "Ans", "Answer", "Q", "Question" followed by optional noise and numbers.
-        # It also looks for these markers after a period or newline to handle fused text.
-        self.marker_pattern = re.compile(r'(?i)(?:\b|\.|\n)\s*(?:ans|answer|q|question)[a-z]*\W*\d*[:\s-]*')
+        self.markers_found = False
 
     def segment_text(self, aggregated_text: str) -> Dict[int, str]:
-        """
-        Splits the text into segments based on markers and assigns them 
-        strictly sequentially (1, 2, 3...) to avoid OCR numbering errors.
-        """
-        text = aggregated_text.replace('\r\n', '\n').strip()
-        
-        matches = list(self.marker_pattern.finditer(text))
-        
-        if not matches:
-            # If no markers, assume everything is for Question 1
-            return {1: text.strip()}
-
-        segments = {}
-        q_no = 1
-        
-        for i in range(len(matches)):
-            start = matches[i].end()
-            end = matches[i+1].start() if i+1 < len(matches) else len(text)
+        # Check if markers exist to set the flag
+        marker_pattern = re.compile(r'(?i)(?:\b|\.|\n)\s*(?:ans|answer|q|question)[a-z]*\W*\d*[:\s-]*')
+        if marker_pattern.search(aggregated_text):
+            self.markers_found = True
+        else:
+            self.markers_found = False
             
-            # Capture the content between markers
-            content = text[start:end].strip()
-            
-            # Basic cleanup of leftovers like "Answer>" or lingering punctuation
-            content = re.sub(r'^[>\W]+', '', content).strip()
-            
-            # Only add if it's not empty (handles consecutive noise markers)
-            if content:
-                segments[q_no] = content
-                q_no += 1
-            elif i == len(matches) - 1:
-                # If the last marker is empty (e.g., student wrote "Ans 3:" but left it blank)
-                segments[q_no] = ""
-                q_no += 1
-            
-        return segments
+        return segment_answers(aggregated_text)

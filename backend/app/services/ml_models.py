@@ -47,14 +47,14 @@ async def process_full_grading(
         text = await asyncio.to_thread(ocr.extract, img_p)
         all_text_parts.append(text)
     
-    aggregated_text = "\n".join(all_text_parts)
+    aggregated_text = " ".join(all_text_parts)
     
     # 3. SEGMENT TEXT (Identify which part belongs to which question)
     segmenter = SmartSegmenter(question_count=len(questions))
     segmented_answers = segmenter.segment_text(aggregated_text)
     
     # Check if we found ANY markers at all
-    any_markers_found = len(segmented_answers) > 0
+    any_markers_found = segmenter.markers_found
     
     # 4. Grade each question against its OWN segment
     question_results = []
@@ -97,9 +97,10 @@ async def process_full_grading(
             kw_rationale = "⚠️ Severely irrelevant answer. Keyword marks nullified."
             kw_details = [{"keyword": kw, "found": False} for kw in keywords]
         elif keywords:
-            kw_score, kw_rationale, kw_details = await asyncio.to_thread(
+            kw_score, _, kw_details = await asyncio.to_thread(
                 checker.check, answer_to_grade, keywords
             )
+            kw_rationale = f"Found {len([d for d in kw_details if d.get('found')])}/{len(keywords)} keywords."
         else:
             # If no keywords, keywords contribute same as semantic score
             kw_score = sem_score

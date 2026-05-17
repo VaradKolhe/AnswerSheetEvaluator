@@ -22,6 +22,9 @@ DEFAULT_SCORE_WEIGHTS = {
     "keywords": 0.25,
 }
 
+SEMANTIC_WEIGHT = 0.75
+KEYWORD_WEIGHT = 0.25
+
 # ── Keyword matching ─────────────────────────────────────────────────────────
 # Cosine-similarity threshold above which a keyword is considered "found"
 # in the student's text (semantic keyword matching via SBERT).

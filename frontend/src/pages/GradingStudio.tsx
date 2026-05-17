@@ -218,7 +218,9 @@ const GradingStudio: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2">
                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Confidence:</span>
-                     <span className={`text-[10px] font-bold ${q.confidence > 85 ? 'text-emerald-600' : 'text-amber-600'}`}>{q.confidence}%</span>
+                     <span className={`text-[10px] font-bold ${q.confidence > 0.85 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {Math.round(q.confidence * 100)}%
+                     </span>
                   </div>
                 </div>
 
@@ -274,7 +276,7 @@ const GradingStudio: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-widest mb-1">AI Suggestion</span>
-                    <span className="text-lg font-bold text-slate-300">{q.ai_marks.toFixed(1)}</span>
+                    <span className="text-xl font-black text-blue-900/40">{q.ai_marks.toFixed(1)}</span>
                   </div>
                 </div>
 
