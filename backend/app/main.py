@@ -6,8 +6,7 @@ import os
 from app.routes import auth, exams, questions, submissions, grading, reports, analytics
 
 app = FastAPI(
-    title="Smart Grading API V2 - Teacher Centric",
-    root_path="/api"
+    title="Smart Grading API V2 - Teacher Centric"
 )
 
 # Request Logger Middleware
@@ -41,6 +40,10 @@ app.include_router(submissions.router)
 app.include_router(grading.router)
 app.include_router(reports.router)
 app.include_router(analytics.router)
+
+@app.get("/test-api")
+async def test_api():
+    return {"status": "ok", "message": "Backend is reachable"}
 
 @app.get("/")
 async def root():
