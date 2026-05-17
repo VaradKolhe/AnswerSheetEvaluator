@@ -13,8 +13,8 @@ services:
               count: 1
               capabilities: [gpu]
     volumes:
-      - ./backend/uploads:/app/uploads
-      - ./backend/reports:/app/reports
+      - uploads_data:/app/uploads
+      - reports_data:/app/reports
     depends_on:
       - mongodb
 
@@ -46,3 +46,5 @@ services:
 
 volumes:
   mongodb_data:
+  uploads_data:
+  reports_data:
