@@ -16,28 +16,29 @@ const ReviewQueue: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
-  useEffect(() => {
-    if (examId) {
-      fetchData();
-    }
-  }, [examId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!examId) return;
     setIsLoading(true);
     try {
-      const [examData, submissionsData] = await Promise.all([
+      const [examData, subsData] = await Promise.all([
         apiService.getExamDetail(examId),
         apiService.getSubmissions(examId)
       ]);
       setSelectedExam(examData);
-      setSubmissions(submissionsData);
+      setSubmissions(subsData);
     } catch (error) {
-      console.error('Failed to fetch review data', error);
+      console.error('Failed to fetch data', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [examId, setIsLoading, setSelectedExam, setSubmissions]);
+
+  useEffect(() => {
+    if (examId) {
+      fetchData();
+    }
+  }, [examId, fetchData]);
+
 
   const handleEditName = async (id: string) => {
     try {

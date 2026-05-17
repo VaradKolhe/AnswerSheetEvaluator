@@ -12,13 +12,7 @@ const StudentReport: React.FC = () => {
   const { selectedExam, setSelectedExam, gradingResult, setGradingResult, setIsLoading } = useAppStore();
   const [classroom, setClassroom] = useState<any>(null);
 
-  useEffect(() => {
-    if (submissionId) {
-      fetchData();
-    }
-  }, [submissionId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!submissionId) return;
     setIsLoading(true);
     try {
@@ -28,14 +22,26 @@ const StudentReport: React.FC = () => {
       const examData = await apiService.getExamDetail(gradingData.exam_id);
       setSelectedExam(examData);
       
-      const classroomData = await apiService.getClassroomDetail(examData.classroom_id);
-      setClassroom(classroomData);
+      // Some versions might have classroom_id, some might not. 
+      // Checking for existence before calling classroom service.
+      if (examData.classroom_id && (apiService as any).getClassroomDetail) {
+         const classroomData = await (apiService as any).getClassroomDetail(examData.classroom_id);
+         setClassroom(classroomData);
+      } else {
+         setClassroom({ name: 'Default Classroom' }); // Fallback
+      }
     } catch (error) {
       console.error('Failed to fetch report data', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [submissionId, setIsLoading, setGradingResult, setSelectedExam]);
+
+  useEffect(() => {
+    if (submissionId) {
+      fetchData();
+    }
+  }, [submissionId, fetchData]);
 
   const handleDownload = async () => {
     if (!submissionId) return;

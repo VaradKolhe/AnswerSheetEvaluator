@@ -19,13 +19,7 @@ const QuestionSetup: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [tempKeyword, setTempKeyword] = useState<{ [key: number]: string }>({});
 
-  useEffect(() => {
-    if (examId) {
-      fetchData();
-    }
-  }, [examId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!examId) return;
     setIsLoading(true);
     try {
@@ -51,7 +45,13 @@ const QuestionSetup: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [examId, setIsLoading, setSelectedExam]);
+
+  useEffect(() => {
+    if (examId) {
+      fetchData();
+    }
+  }, [examId, fetchData]);
 
   const addQuestion = () => {
     const nextNo = questions.length + 1;

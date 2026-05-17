@@ -9,11 +9,7 @@ const Reports: React.FC = () => {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchExams();
-  }, []);
-
-  const fetchExams = async () => {
+  const fetchExams = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await apiService.getExams();
@@ -23,7 +19,11 @@ const Reports: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [setIsLoading, setExams]);
+
+  useEffect(() => {
+    fetchExams();
+  }, [fetchExams]);
 
   const handleExamSelect = async (examId: string) => {
     setSelectedExamId(examId);

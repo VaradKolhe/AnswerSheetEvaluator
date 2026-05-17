@@ -29,13 +29,7 @@ const GradingStudio: React.FC = () => {
   const [scale, setScale] = useState<number>(1.2);
   const [overrides, setOverrides] = useState<{ [key: string]: { marks: number, comment: string } }>({});
 
-  useEffect(() => {
-    if (submissionId) {
-      fetchData();
-    }
-  }, [submissionId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!submissionId) return;
     setIsLoading(true);
     try {
@@ -56,7 +50,13 @@ const GradingStudio: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [submissionId, setIsLoading, setSelectedSubmission, setGradingResult]);
+
+  useEffect(() => {
+    if (submissionId) {
+      fetchData();
+    }
+  }, [submissionId, fetchData]);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);

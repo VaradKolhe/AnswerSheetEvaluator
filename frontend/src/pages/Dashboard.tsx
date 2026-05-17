@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
-  FileText, Clock, CheckCircle2,
+  Clock, CheckCircle2,
   ArrowRight, GraduationCap,
   Zap, PlusCircle, ClipboardList, TrendingUp, Users
 } from 'lucide-react';
@@ -32,11 +32,8 @@ const Dashboard: React.FC = () => {
   const { user, exams, setExams, setIsLoading } = useAppStore();
   const [stats, setStats] = useState({ exams: 0, submissions: 0, pending: 0, finalized: 0 });
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  
+  const fetchDashboardData = useCallback(async () => {
     setIsLoading(true);
     try {
       const examsData = await apiService.getExams();
@@ -49,8 +46,8 @@ const Dashboard: React.FC = () => {
       for (const exam of examsData) {
         const subs = await apiService.getSubmissions(exam.exam_id);
         totalSubmissions += subs.length;
-        pendingReviews += subs.filter(s => s.status === 'graded' || s.status === 'pending').length;
-        finalizedSubmissions += subs.filter(s => s.status === 'finalized').length;
+        pendingReviews += subs.filter((s: any) => s.status === 'graded' || s.status === 'pending').length;
+        finalizedSubmissions += subs.filter((s: any) => s.status === 'finalized').length;
       }
 
       setStats({
@@ -64,8 +61,12 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
+  }, [setIsLoading, setExams]);
+  
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+  
   const statCards = [
     { title: 'Total Exams', value: stats.exams, icon: ClipboardList, colorClass: 'bg-blue-50 text-blue-700', trend: '+12%' },
     { title: 'Total Students', value: stats.submissions, icon: Users, colorClass: 'bg-indigo-50 text-indigo-700', trend: '+5%' },
@@ -146,7 +147,7 @@ const Dashboard: React.FC = () => {
                       </Link>
                     </td>
                   </tr>
-                ))}
+                ))}                
                 {exams.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center text-slate-400 font-medium italic">

@@ -17,13 +17,7 @@ const ExamUpload: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [currentStatus, setCurrentStatus] = useState('');
 
-  useEffect(() => {
-    if (examId) {
-      fetchExam();
-    }
-  }, [examId]);
-
-  const fetchExam = async () => {
+  const fetchExam = useCallback(async () => {
     if (!examId) return;
     try {
       const data = await apiService.getExamDetail(examId);
@@ -31,7 +25,13 @@ const ExamUpload: React.FC = () => {
     } catch (err) {
       console.error('Failed to fetch exam', err);
     }
-  };
+  }, [examId]);
+
+  useEffect(() => {
+    if (examId) {
+      fetchExam();
+    }
+  }, [examId, fetchExam]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
