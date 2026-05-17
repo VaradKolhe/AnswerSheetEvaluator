@@ -5,6 +5,7 @@ Semantic similarity scoring using Sentence-BERT (SBERT).
 
 from __future__ import annotations
 
+import os
 import torch
 from sentence_transformers import SentenceTransformer, util
 
@@ -25,7 +26,11 @@ class SemanticGrader:
     def __init__(self, model_id: str = SBERT_MODEL_ID):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"  Loading Sentence-BERT model: {model_id} on {self.device} …")
-        self.model = SentenceTransformer(model_id, device=self.device)
+        self.model = SentenceTransformer(
+            model_id, 
+            device=self.device,
+            token=os.getenv("HF_TOKEN")
+        )
 
     def score(
         self,

@@ -5,6 +5,7 @@ Mandatory keyword detection using semantic matching (not exact string search).
 
 from __future__ import annotations
 
+import os
 import re
 from sentence_transformers import SentenceTransformer, util
 
@@ -37,7 +38,7 @@ class KeywordChecker:
         model_id: str = SBERT_MODEL_ID,
         threshold: float = KEYWORD_SIMILARITY_THRESHOLD,
     ):
-        self.model = SentenceTransformer(model_id)
+        self.model = SentenceTransformer(model_id, token=os.getenv("HF_TOKEN"))
         self.threshold = threshold
 
     def check(

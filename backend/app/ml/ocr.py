@@ -34,9 +34,10 @@ class HandwritingOCR:
             model_id, 
             torch_dtype=torch.float16, 
             device_map="auto",
-            trust_remote_code=True
+            trust_remote_code=True,
+            token=os.getenv("HF_TOKEN")
         )
-        self.processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+        self.processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True, token=os.getenv("HF_TOKEN"))
 
     def extract(self, image_path: str | Path) -> str:
         """
