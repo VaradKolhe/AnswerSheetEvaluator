@@ -40,6 +40,8 @@ class ExamResponse(ExamBase):
     exam_id: str
     teacher_id: str
     created_at: datetime
+    question_count: int = 0
+    submission_count: int = 0
 
 # --- QUESTION SCHEMAS ---
 

@@ -37,14 +37,27 @@ async def update_exam(
 
 @router.get("/", response_model=List[ExamResponse])
 async def list_exams(current_user: dict = Depends(get_current_user)):
-    cursor = db.exams.find({"teacher_id": current_user["id"]})
-    return await cursor.to_list(length=100)
+    exams = await db.exams.find({"teacher_id": current_user["id"]}).to_list(length=100)
+    
+    # Enrich with counts
+    enriched_exams = []
+    for exam in exams:
+        exam["question_count"] = await db.questions.count_documents({"exam_id": exam["exam_id"]})
+        exam["submission_count"] = await db.submissions.count_documents({"exam_id": exam["exam_id"]})
+        enriched_exams.append(exam)
+        
+    return enriched_exams
 
 @router.get("/{exam_id}", response_model=ExamResponse)
 async def get_exam(exam_id: str, current_user: dict = Depends(get_current_user)):
     exam = await db.exams.find_one({"exam_id": exam_id, "teacher_id": current_user["id"]})
     if not exam:
         raise HTTPException(status_code=404, detail="Exam not found")
+    
+    # Enrich with counts
+    exam["question_count"] = await db.questions.count_documents({"exam_id": exam_id})
+    exam["submission_count"] = await db.submissions.count_documents({"exam_id": exam_id})
+    
     return exam
 
 @router.delete("/{exam_id}")

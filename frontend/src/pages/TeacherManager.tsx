@@ -169,13 +169,17 @@ const TeacherManager: React.FC = () => {
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
                   Questions
                 </p>
-                <p className="text-lg font-bold text-slate-700">--</p>
+                <p className="text-lg font-bold text-slate-700">
+                  {((exam.question_count ?? 0) === 0 && (exam.submission_count ?? 0) === 0) ? "---" : (exam.question_count ?? 0)}
+                </p>
               </div>
               <div className="bg-slate-50 p-3 rounded-xl text-center">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
                   Students
                 </p>
-                <p className="text-lg font-bold text-slate-700">--</p>
+                <p className="text-lg font-bold text-slate-700">
+                  {((exam.question_count ?? 0) === 0 && (exam.submission_count ?? 0) === 0) ? "---" : (exam.submission_count ?? 0)}
+                </p>
               </div>
             </div>
 

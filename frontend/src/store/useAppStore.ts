@@ -12,6 +12,8 @@ interface Exam {
   exam_name: string;
   subject: string;
   total_marks: number;
+  question_count?: number;
+  submission_count?: number;
 }
 
 interface Question {
