@@ -25,9 +25,6 @@ UPLOAD_DIR = "uploads"
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 
-# Mount uploads directory to serve PDF files
-app.mount("/files", StaticFiles(directory=UPLOAD_DIR), name="files")
-
 # Register Routers
 app.include_router(auth.router)
 app.include_router(exams.router)

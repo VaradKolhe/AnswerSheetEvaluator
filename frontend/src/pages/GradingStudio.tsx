@@ -105,12 +105,12 @@ const GradingStudio: React.FC = () => {
 
   // Use the same getBaseUrl logic as api.ts to determine if we are in prod
   const getFileUrl = () => {
-    // 1. Production: Use absolute path from root through the /api proxy
+    // 1. Production: Use absolute path to the explicit backend file route
     if (import.meta.env.VITE_API_URL || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
-      return `/api/files/${selectedSubmission.submission_id}.pdf`;
+      return `/api/submissions/file/${selectedSubmission.submission_id}`;
     }
     // 2. Development: Use local backend port
-    return `http://localhost:8000/files/${selectedSubmission.submission_id}.pdf`;
+    return `http://localhost:8000/api/submissions/file/${selectedSubmission.submission_id}`;
   };
 
   const pdfUrl = getFileUrl();

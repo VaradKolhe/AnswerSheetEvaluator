@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from app.schemas.schemas import SubmissionResponse, StudentUpdate
 from app.routes.auth import get_current_user
 from app.database import db
@@ -13,6 +14,22 @@ router = APIRouter(prefix="/submissions", tags=["submissions"])
 UPLOAD_DIR = "uploads"
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
+
+@router.get("/file/{submission_id}", response_class=FileResponse)
+async def get_submission_file(submission_id: str):
+    """
+    Explicitly serve the PDF file for a submission.
+    This bypasses static mounting issues with root_path.
+    """
+    file_path = os.path.join(UPLOAD_DIR, f"{submission_id}.pdf")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(
+        path=file_path,
+        media_type="application/pdf",
+        filename=f"{submission_id}.pdf"
+    )
 
 @router.post("/upload/{exam_id}", response_model=List[SubmissionResponse])
 async def upload_submissions(
