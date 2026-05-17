@@ -74,6 +74,7 @@ interface AppState {
   
   // UI
   isLoading: boolean;
+  loadingProgress: number;
   error: string | null;
 
   // Actions
@@ -88,6 +89,7 @@ interface AppState {
   setGradingResult: (result: GradingResult | null) => void;
   
   setIsLoading: (isLoading: boolean) => void;
+  setLoadingProgress: (progress: number) => void;
   setError: (error: string | null) => void;
 }
 
@@ -104,6 +106,7 @@ export const useAppStore = create<AppState>()(
       selectedSubmission: null,
       gradingResult: null,
       isLoading: false,
+      loadingProgress: 0,
       error: null,
 
       setAuth: (user, token) => set({ 
@@ -132,6 +135,7 @@ export const useAppStore = create<AppState>()(
       setGradingResult: (gradingResult) => set({ gradingResult }),
       
       setIsLoading: (isLoading) => set({ isLoading }),
+      setLoadingProgress: (loadingProgress) => set({ loadingProgress }),
       setError: (error) => set({ error }),
     }),
     {

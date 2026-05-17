@@ -42,14 +42,9 @@ const GradingStudio: React.FC = () => {
     const checkPdf = async () => {
       if (!pdfUrl) return;
       try {
-        console.log('DEBUG: Starting fetch check for:', pdfUrl);
         const response = await fetch(pdfUrl);
-        console.log('DEBUG: PDF Fetch Status:', response.status);
-        console.log('DEBUG: PDF Content-Type:', response.headers.get('Content-Type'));
         if (response.headers.get('Content-Type')?.includes('text/html')) {
           console.error('DEBUG: RECEIVED HTML INSTEAD OF PDF!');
-          const text = await response.text();
-          console.log('DEBUG: HTML Content start:', text.substring(0, 100));
         }
       } catch (e) {
         console.error('DEBUG: Fetch error:', e);
@@ -60,12 +55,21 @@ const GradingStudio: React.FC = () => {
 
   const fetchData = useCallback(async () => {
     if (!submissionId) return;
+    const { setIsLoading, setLoadingProgress } = useAppStore.getState();
+    
     setIsLoading(true);
+    setLoadingProgress(30); // Immediate jump to start
+    
     try {
       const [submissionData, gradingData] = await Promise.all([
         apiService.getSubmissionDetail(submissionId),
         apiService.getGradingResult(submissionId)
       ]);
+      
+      // Response received, finish progress smoothly
+      setLoadingProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 300)); // Wait for 100% animation
+      
       setSelectedSubmission(submissionData);
       setGradingResult(gradingData);
       

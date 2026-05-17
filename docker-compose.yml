@@ -25,6 +25,10 @@ services:
     environment:
       # The frontend code running in the browser needs to hit the public IP /api
       - VITE_API_URL=/api
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
 

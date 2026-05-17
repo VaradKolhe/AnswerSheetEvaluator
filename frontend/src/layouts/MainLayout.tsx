@@ -8,7 +8,8 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -37,7 +38,7 @@ const SidebarItem = ({ icon: Icon, label, href, active }: { icon: any, label: st
 export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAppStore();
+  const { user, logout, isLoading, loadingProgress } = useAppStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const navItems = [
@@ -52,7 +53,28 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
   };
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-slate-50 relative">
+      {/* Global Loader Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/60 backdrop-blur-md transition-all duration-300 animate-in fade-in">
+           <div className="bg-white p-10 rounded-3xl shadow-2xl border border-slate-100 flex flex-col items-center gap-6 animate-in zoom-in-95 duration-200 w-80">
+              <div className="relative w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className="absolute inset-y-0 left-0 bg-blue-900 transition-all duration-300 ease-out rounded-full"
+                  style={{ width: `${loadingProgress}%` }}
+                />
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-slate-900 tracking-tight">Processing Request</p>
+                  <span className="text-[10px] font-black text-blue-900 bg-blue-50 px-1.5 py-0.5 rounded-md border border-blue-100">{Math.round(loadingProgress)}%</span>
+                </div>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Preparing your dashboard...</p>
+              </div>
+           </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transition-transform duration-300 lg:relative lg:translate-x-0",
