@@ -120,7 +120,7 @@ const GradingStudio: React.FC = () => {
     return `http://localhost:8000/files/${selectedSubmission.submission_id}.pdf`;
   };
 
-  const pdfUrl = getFileUrl();
+  const pdfUrl = `${getFileUrl()}?t=${Date.now()}`;
 
   return (
     <div className="h-[calc(100vh-10rem)] flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 relative">
