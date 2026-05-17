@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
@@ -9,6 +9,14 @@ app = FastAPI(
     title="Smart Grading API V2 - Teacher Centric",
     root_path="/api"
 )
+
+# Request Logger Middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    print(f"DEBUG: Incoming request: {request.method} {request.url.path}")
+    response = await call_next(request)
+    print(f"DEBUG: Response status: {response.status_code}")
+    return response
 
 # CORS Configuration
 app.add_middleware(

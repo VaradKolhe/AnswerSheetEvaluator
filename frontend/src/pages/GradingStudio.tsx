@@ -30,6 +30,34 @@ const GradingStudio: React.FC = () => {
   const [overrides, setOverrides] = useState<{ [key: string]: { marks: number, comment: string } }>({});
   const [expandedText, setExpandedText] = useState<{ questionNo: number, text: string } | null>(null);
 
+  // Computed values
+  const pdfUrl = selectedSubmission 
+    ? (import.meta.env.VITE_API_URL || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
+        ? `/api/submissions/file/${selectedSubmission.submission_id}`
+        : `http://localhost:8000/api/submissions/file/${selectedSubmission.submission_id}`)
+    : '';
+
+  useEffect(() => {
+    // Simple fetch to debug what is actually being returned
+    const checkPdf = async () => {
+      if (!pdfUrl) return;
+      try {
+        console.log('DEBUG: Starting fetch check for:', pdfUrl);
+        const response = await fetch(pdfUrl);
+        console.log('DEBUG: PDF Fetch Status:', response.status);
+        console.log('DEBUG: PDF Content-Type:', response.headers.get('Content-Type'));
+        if (response.headers.get('Content-Type')?.includes('text/html')) {
+          console.error('DEBUG: RECEIVED HTML INSTEAD OF PDF!');
+          const text = await response.text();
+          console.log('DEBUG: HTML Content start:', text.substring(0, 100));
+        }
+      } catch (e) {
+        console.error('DEBUG: Fetch error:', e);
+      }
+    };
+    checkPdf();
+  }, [pdfUrl]);
+
   const fetchData = useCallback(async () => {
     if (!submissionId) return;
     setIsLoading(true);
@@ -102,38 +130,6 @@ const GradingStudio: React.FC = () => {
   };
 
   if (!selectedSubmission || !gradingResult) return null;
-
-  // Use the same getBaseUrl logic as api.ts to determine if we are in prod
-  const getFileUrl = () => {
-    // 1. Production: Use absolute path to the explicit backend file route
-    if (import.meta.env.VITE_API_URL || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
-      return `/api/submissions/file/${selectedSubmission.submission_id}`;
-    }
-    // 2. Development: Use local backend port
-    return `http://localhost:8000/api/submissions/file/${selectedSubmission.submission_id}`;
-  };
-
-  const pdfUrl = getFileUrl();
-  console.log('DEBUG: PDF URL being loaded:', pdfUrl);
-
-  useEffect(() => {
-    // Simple fetch to debug what is actually being returned
-    const checkPdf = async () => {
-      try {
-        const response = await fetch(pdfUrl);
-        console.log('DEBUG: PDF Fetch Status:', response.status);
-        console.log('DEBUG: PDF Content-Type:', response.headers.get('Content-Type'));
-        if (response.headers.get('Content-Type')?.includes('text/html')) {
-          console.error('DEBUG: RECEIVED HTML INSTEAD OF PDF!');
-          const text = await response.text();
-          console.log('DEBUG: HTML Content start:', text.substring(0, 100));
-        }
-      } catch (e) {
-        console.error('DEBUG: Fetch error:', e);
-      }
-    };
-    if (selectedSubmission) checkPdf();
-  }, [pdfUrl, selectedSubmission]);
 
   return (
     <div className="h-[calc(100vh-10rem)] flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 relative">
