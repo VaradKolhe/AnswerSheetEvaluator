@@ -9,40 +9,42 @@ class SmartSegmenter:
     
     def __init__(self, question_count: int):
         self.question_count = question_count
-        # Robust pattern: Ans 1, Q1, Answer 1, Ans: (fallback to index), etc.
-        self.marker_pattern = re.compile(r'(?i)(?:ans|answer|q|question)\s*[:\s-]*(\d*)')
+        # Precise pattern: Matches "Ans 1", "Q. 2", "Question-3", "Answer 4:" at start of line or with space
+        # Avoids matching inside words
+        self.marker_pattern = re.compile(r'(?i)(?:\bans\b|\banswer\b|\bq\b|\bquestion\b)\s*[:\s-]*(\d+)')
 
     def segment_text(self, aggregated_text: str) -> Dict[int, str]:
         """
         Splits the text into a mapping of {question_no: text}.
         """
-        matches = list(self.marker_pattern.finditer(aggregated_text))
+        # 1. Clean the text a bit to normalize line endings
+        text = aggregated_text.replace('\r\n', '\n').strip()
+        
+        matches = list(self.marker_pattern.finditer(text))
         segments = {}
         
         if not matches:
             # Fallback: assume everything is Q1 if no markers found
-            return {1: aggregated_text.strip()}
+            return {1: text}
 
         for i in range(len(matches)):
             start = matches[i].end()
-            end = matches[i+1].start() if i+1 < len(matches) else len(aggregated_text)
+            end = matches[i+1].start() if i+1 < len(matches) else len(text)
             
             q_num_str = matches[i].group(1)
-            # Handle cases like "Answ:" (no number) or typos like "Ans25"
-            if not q_num_str:
+            try:
+                q_no = int(q_num_str)
+            except (ValueError, TypeError):
+                # Fallback to index if number extraction fails
                 q_no = i + 1
-            elif q_num_str == "25":
-                q_no = 2
-            else:
-                try:
-                    q_no = int(q_num_str)
-                except ValueError:
-                    q_no = i + 1
             
-            content = aggregated_text[start:end].strip().strip(':').strip('-').strip()
+            # Extract content and remove leading/trailing noise
+            content = text[start:end].strip()
+            content = re.sub(r'^[:\s\-\.]+', '', content).strip()
             
             if q_no in segments:
-                segments[q_no] += " " + content
+                # Merge if the student wrote the same answer twice or split across markers
+                segments[q_no] += "\n" + content
             else:
                 segments[q_no] = content
             

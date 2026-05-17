@@ -48,7 +48,7 @@ class HandwritingOCR:
                     {
                         "type": "image",
                         "image": str(image_path),
-                        "max_pixels": 1024 * 28 * 28, # Safe limit for T4/G4dn
+                        "max_pixels": 2048 * 28 * 28, # Increased for high-res scans
                     },
                     {
                         "type": "text", 
