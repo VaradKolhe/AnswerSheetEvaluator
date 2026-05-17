@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Plus,
   FileText,
@@ -9,12 +9,11 @@ import {
   Edit2,
   X,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { apiService } from "../services/api";
 import { useAppStore } from "../store/useAppStore";
 
 const TeacherManager: React.FC = () => {
-  const navigate = useNavigate();
   const { exams, setExams, setIsLoading } = useAppStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newExam, setNewExam] = useState({
@@ -23,21 +22,23 @@ const TeacherManager: React.FC = () => {
     total_marks: 100,
   });
 
-  const fetchExams = async () => {
+  const fetchExams = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await apiService.getExams();
-      setExams(data);
+      const safeData = Array.isArray(data) ? data : [];
+      setExams(safeData);
     } catch (error) {
       console.error("Failed to fetch exams", error);
+      setExams([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [setIsLoading, setExams]);
   
   useEffect(() => {
     fetchExams();
-  }, []);
+  }, [fetchExams]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +67,8 @@ const TeacherManager: React.FC = () => {
     }
   };
 
+  const safeExams = Array.isArray(exams) ? exams : [];
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
@@ -87,7 +90,7 @@ const TeacherManager: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {exams.map((exam) => (
+        {safeExams.map((exam) => (
           <div
             key={exam.exam_id}
             className="group bg-white border border-slate-200 p-6 rounded-2xl hover:shadow-xl hover:border-blue-200 transition-all duration-300"
@@ -168,7 +171,7 @@ const TeacherManager: React.FC = () => {
           </div>
         ))}
 
-        {exams.length === 0 && (
+        {safeExams.length === 0 && (
           <div className="col-span-full py-20 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
             <div className="p-4 bg-slate-50 rounded-full">
               <GraduationCap size={48} className="text-slate-300" />
