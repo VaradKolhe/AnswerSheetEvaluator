@@ -23,13 +23,12 @@ const QuestionSetup: React.FC = () => {
     if (!examId) return;
     setIsLoading(true);
     try {
-      const [examData, questionsData] = await Promise.all([
-        apiService.getExamDetail(examId),
-        apiService.getQuestions(examId)
-      ]);
+      const examData = await apiService.getExamDetail(examId);
+      const questionsData = await apiService.getQuestions(examId);
       setSelectedExam(examData);
-      if (questionsData.length > 0) {
-        setQuestions(questionsData);
+      const safeQuestionsData = Array.isArray(questionsData) ? questionsData : [];
+      if (safeQuestionsData.length > 0) {
+        setQuestions(safeQuestionsData.sort((a: any, b: any) => a.question_no - b.question_no));
       } else {
         // Default first question
         setQuestions([{

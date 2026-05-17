@@ -53,8 +53,8 @@ const Reports: React.FC = () => {
     }
   };
 
-  const filteredExams = exams.filter(e => e.exam_name.toLowerCase().includes(searchTerm.toLowerCase()));
-  const filteredSubmissions = submissions.filter(s => s.student_name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredExams = (Array.isArray(exams) ? exams : []).filter(e => e.exam_name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredSubmissions = (Array.isArray(submissions) ? submissions : []).filter(s => s.student_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

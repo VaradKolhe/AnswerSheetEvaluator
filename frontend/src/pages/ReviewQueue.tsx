@@ -50,7 +50,7 @@ const ReviewQueue: React.FC = () => {
     }
   };
 
-  const filteredSubmissions = submissions.filter(s => {
+  const filteredSubmissions = (Array.isArray(submissions) ? submissions : []).filter(s => {
     const matchesSearch = s.student_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || s.status === filterStatus;
     return matchesSearch && matchesFilter;

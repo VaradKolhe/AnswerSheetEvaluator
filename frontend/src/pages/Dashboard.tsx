@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 
-const StatCard = ({ title, value, icon: Icon, colorClass, trend }: any) => (
+const StatCard = ({ title, value, icon: Icon, colorClass, trend }: { title: string, value: number, icon: any, colorClass: string, trend?: string }) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm group hover:shadow-md transition-all duration-300">
     <div className="flex items-center justify-between mb-4">
       <div className={`p-3 rounded-xl ${colorClass}`}>
@@ -37,27 +37,30 @@ const Dashboard: React.FC = () => {
     setIsLoading(true);
     try {
       const examsData = await apiService.getExams();
-      setExams(examsData);
+      const safeExamsData = Array.isArray(examsData) ? examsData : [];
+      setExams(safeExamsData);
       
       let totalSubmissions = 0;
       let pendingReviews = 0;
       let finalizedSubmissions = 0;
 
-      for (const exam of examsData) {
+      for (const exam of safeExamsData) {
         const subs = await apiService.getSubmissions(exam.exam_id);
-        totalSubmissions += subs.length;
-        pendingReviews += subs.filter((s: any) => s.status === 'graded' || s.status === 'pending').length;
-        finalizedSubmissions += subs.filter((s: any) => s.status === 'finalized').length;
+        const safeSubs = Array.isArray(subs) ? subs : [];
+        totalSubmissions += safeSubs.length;
+        pendingReviews += safeSubs.filter((s: any) => s.status === 'graded' || s.status === 'pending').length;
+        finalizedSubmissions += safeSubs.filter((s: any) => s.status === 'finalized').length;
       }
 
       setStats({
-        exams: examsData.length,
+        exams: safeExamsData.length,
         submissions: totalSubmissions,
         pending: pendingReviews,
         finalized: finalizedSubmissions
       });
     } catch (error) {
       console.error('Failed to fetch dashboard data', error);
+      setExams([]);
     } finally {
       setIsLoading(false);
     }

@@ -41,7 +41,8 @@ const GradingStudio: React.FC = () => {
       setGradingResult(gradingData);
       
       const initialOverrides: any = {};
-      gradingData.question_results.forEach((q: any) => {
+      const safeResults = Array.isArray(gradingData.question_results) ? gradingData.question_results : [];
+      safeResults.forEach((q: any) => {
         initialOverrides[q.question_id] = { marks: q.final_marks, comment: q.teacher_comment };
       });
       setOverrides(initialOverrides);
