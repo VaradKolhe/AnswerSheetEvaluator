@@ -35,8 +35,8 @@ async def upload_submissions(
         base_name = os.path.splitext(file.filename)[0]
         student_name = base_name.replace('_', ' ').replace('-', ' ').title()
         
-        file_ext = os.path.splitext(file.filename)[1]
-        stored_filename = f"{submission_id}{file_ext}"
+        # Force .pdf extension to match frontend expectations
+        stored_filename = f"{submission_id}.pdf"
         file_path = os.path.join(UPLOAD_DIR, stored_filename)
         
         with open(file_path, "wb") as buffer:

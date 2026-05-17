@@ -48,11 +48,11 @@ class HandwritingOCR:
                     {
                         "type": "image",
                         "image": str(image_path),
-                        "max_pixels": 2048 * 28 * 28, # Increased for high-res scans
+                        "max_pixels": 1024 * 28 * 28,
                     },
                     {
                         "type": "text", 
-                        "text": "Transcribe all handwritten text in this image precisely. DO NOT output coordinates. Read every word."
+                        "text": "Transcribe all handwritten text precisely. Output ONLY the text."
                     },
                 ],
             }
@@ -73,7 +73,7 @@ class HandwritingOCR:
         with torch.no_grad():
             generated_ids = self.model.generate(
                 **inputs, 
-                max_new_tokens=4096,
+                max_new_tokens=2048,
                 do_sample=False
             )
         
