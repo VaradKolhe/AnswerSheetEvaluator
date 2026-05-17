@@ -107,15 +107,14 @@ const GradingStudio: React.FC = () => {
   const getFileUrl = () => {
     // 1. If an environment variable is explicitly set, use it to derive the files path
     if (import.meta.env.VITE_API_URL) {
-      const baseUrl = import.meta.env.VITE_API_URL; // Should be http://IP/api
-      const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-      return `${normalizedBase}files/${selectedSubmission.submission_id}.pdf`;
+      // Production: Files are served via Nginx at /files/
+      return `/files/${selectedSubmission.submission_id}.pdf`;
     }
 
     const host = window.location.hostname;
     if (host !== 'localhost' && host !== '127.0.0.1') {
-      // Production: Files are served via FastAPI which is now at /api/
-      return `/api/files/${selectedSubmission.submission_id}.pdf`;
+      // Production fallback: Files are served via Nginx at /files/
+      return `/files/${selectedSubmission.submission_id}.pdf`;
     }
     // Development fallback
     return `http://localhost:8000/files/${selectedSubmission.submission_id}.pdf`;

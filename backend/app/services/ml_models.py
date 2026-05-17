@@ -49,9 +49,19 @@ async def process_full_grading(
     
     aggregated_text = " ".join(all_text_parts)
     
+    print(f"\n--- DEBUG: RAW AGGREGATED OCR TEXT ({len(aggregated_text)} chars) ---")
+    print(aggregated_text)
+    print("--- END DEBUG ---\n")
+    
     # 3. SEGMENT TEXT (Identify which part belongs to which question)
     segmenter = SmartSegmenter(question_count=len(questions))
     segmented_answers = segmenter.segment_text(aggregated_text)
+    
+    print("\n--- DEBUG: SEGMENTATION RESULTS ---")
+    for q_no, content in segmented_answers.items():
+        print(f"Question {q_no}: {len(content)} chars")
+        print(f"Content snippet: {content[:100]}...")
+    print("--- END DEBUG ---\n")
     
     # Check if we found ANY markers at all
     any_markers_found = segmenter.markers_found
