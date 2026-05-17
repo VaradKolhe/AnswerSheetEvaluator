@@ -105,22 +105,15 @@ const GradingStudio: React.FC = () => {
 
   // Use the same getBaseUrl logic as api.ts to determine if we are in prod
   const getFileUrl = () => {
-    // 1. If an environment variable is explicitly set, use it to derive the files path
-    if (import.meta.env.VITE_API_URL) {
-      // Production: Files are served via Nginx at /files/
-      return `/files/${selectedSubmission.submission_id}.pdf`;
+    // 1. Production: Use absolute path from root through the /api proxy
+    if (import.meta.env.VITE_API_URL || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
+      return `/api/files/${selectedSubmission.submission_id}.pdf`;
     }
-
-    const host = window.location.hostname;
-    if (host !== 'localhost' && host !== '127.0.0.1') {
-      // Production fallback: Files are served via Nginx at /files/
-      return `/files/${selectedSubmission.submission_id}.pdf`;
-    }
-    // Development fallback
+    // 2. Development: Use local backend port
     return `http://localhost:8000/files/${selectedSubmission.submission_id}.pdf`;
   };
 
-  const pdfUrl = `${getFileUrl()}?t=${Date.now()}`;
+  const pdfUrl = getFileUrl();
 
   return (
     <div className="h-[calc(100vh-10rem)] flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 relative">
@@ -177,6 +170,7 @@ const GradingStudio: React.FC = () => {
           <Document
             file={pdfUrl}
             onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={(error) => console.error('PDF Load Error:', error)}
             loading={<div className="text-white font-bold animate-pulse">Loading Document...</div>}
           >
             <Page pageNumber={pageNumber} scale={scale} className="shadow-2xl rounded-lg" />
