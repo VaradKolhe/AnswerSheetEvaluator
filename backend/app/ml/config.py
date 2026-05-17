@@ -18,14 +18,14 @@ SBERT_MODEL_ID = "all-mpnet-base-v2"
 # semantic  → how closely the student's answer mirrors the rubric in meaning.
 # keywords  → whether mandatory vocabulary/concepts appear in the answer.
 DEFAULT_SCORE_WEIGHTS = {
-    "semantic": 0.70,
-    "keywords": 0.30,
+    "semantic": 0.75,
+    "keywords": 0.25,
 }
 
 # ── Keyword matching ─────────────────────────────────────────────────────────
 # Cosine-similarity threshold above which a keyword is considered "found"
 # in the student's text (semantic keyword matching via SBERT).
-KEYWORD_SIMILARITY_THRESHOLD = 0.55
+KEYWORD_SIMILARITY_THRESHOLD = 0.45
 
 # ── Image preprocessing ──────────────────────────────────────────────────────
 # Target DPI for preprocessing before feeding into TrOCR.

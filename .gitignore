@@ -167,3 +167,8 @@ backend/reports/*
 !backend/reports/.gitkeep
 frontend/.env
 backend/.env
+
+Deep_Learning_Project/
+colab_script.py
+GEMINI.md
+page1.pdf

@@ -71,15 +71,27 @@ async def process_full_grading(
             grader.score, answer_to_grade, q["expected_answer"]
         )
         
-        # Keyword Score
-        kw_score, kw_rationale, kw_details = await asyncio.to_thread(
-            checker.check, answer_to_grade, q["keywords"]
-        )
+        # ── SAFETY NET: If meaning is < 20%, nullify keywords ─────────────────
+        is_irrelevant = sem_score < 0.20
+        
+        if is_irrelevant:
+            kw_score = 0.0
+            kw_details = [{"keyword": kw, "found": False} for kw in q["keywords"]]
+            kw_rationale = "⚠️ Answer is semantically irrelevant. Keyword marks nullified."
+        else:
+            # Keyword Score
+            kw_score, kw_rationale, kw_details = await asyncio.to_thread(
+                checker.check, answer_to_grade, q["keywords"]
+            )
         
         # Calculate marks
         weights = DEFAULT_SCORE_WEIGHTS
         final_relative_score = (sem_score * weights["semantic"]) + (kw_score * weights["keywords"])
-        ai_marks = round(final_relative_score * q["max_marks"], 2)
+        
+        # ── 0.5 ROUNDING LOGIC ───────────────────────────────────────────────
+        raw_marks = final_relative_score * q["max_marks"]
+        ai_marks = round(raw_marks * 2) / 2
+        ai_marks = min(ai_marks, q["max_marks"])
         
         question_results.append({
             "question_id": q["question_id"],
