@@ -2,21 +2,23 @@ import axios from 'axios';
 import { useAppStore } from '../store/useAppStore';
 
 const getBaseUrl = () => {
-  // 1. If running in a browser and not on localhost, ALWAYS use the /api proxy
-  if (typeof window !== 'undefined' && 
-      window.location.hostname !== 'localhost' && 
-      window.location.hostname !== '127.0.0.1') {
-    return '/api';
+  // Check if we are running in a browser
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    // If we are NOT on a local development machine, we MUST use the /api proxy.
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      console.log('Production Environment Detected: Using /api proxy');
+      return '/api';
+    }
   }
 
-  // 2. If the user explicitly provided a URL via env var (local dev), use it.
+  // Fallback for local development
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-
-  // 3. Fallback for local machine development
   return 'http://localhost:8000';
 };
 
 const API_BASE_URL = getBaseUrl();
+console.log('API Base URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
