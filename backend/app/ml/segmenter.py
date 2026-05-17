@@ -9,15 +9,14 @@ class SmartSegmenter:
     
     def __init__(self, question_count: int):
         self.question_count = question_count
-        # More flexible pattern: 
-        # - Matches Ans1, Ans 1, Q.2, Q2, Question 3, etc.
-        # - Optional period after the label
-        # - No word boundary required before the digit
-        self.marker_pattern = re.compile(r'(?i)(?:\bans|\banswer|\bq|\bquestion)\.?\s*[:\s-]*(\d+)')
+        # Robust pattern from colab_script.py:
+        # - More forgiving about boundaries and optional digit
+        self.marker_pattern = re.compile(r'(?i)(?:ans|answer|q|question)\s*[:\s-]*(\d*)')
 
     def segment_text(self, aggregated_text: str) -> Dict[int, str]:
         """
-        Splits the text into a mapping of {question_no: text}.
+        Splits the text into segments based on markers and assigns them 
+        strictly sequentially (1, 2, 3...) to avoid OCR numbering errors.
         """
         text = aggregated_text.replace('\r\n', '\n').strip()
         
@@ -25,23 +24,25 @@ class SmartSegmenter:
         segments = {}
         
         if not matches:
-            return {} # Return empty to indicate total failure
+            # If no markers, assume everything is for Question 1
+            return {1: text.strip()}
 
         for i in range(len(matches)):
             start = matches[i].end()
             end = matches[i+1].start() if i+1 < len(matches) else len(text)
             
-            q_num_str = matches[i].group(1)
-            try:
-                q_no = int(q_num_str)
-            except (ValueError, TypeError):
-                q_no = i + 1
+            # The actual question number found by OCR is ignored to prevent 
+            # misalignment (e.g. "AnsW1" or "Ans 25" mistakes).
+            # We strictly assign based on the order of appearance.
+            q_no = i + 1
             
-            content = text[start:end].strip()
-            content = re.sub(r'^[:\s\-\.]+', '', content).strip()
+            # Robust separator removal
+            content = text[start:end].strip().strip(':').strip('-').strip()
             
+            # If we somehow have multiple markers for the same logical position 
+            # (unlikely with this loop), we append.
             if q_no in segments:
-                segments[q_no] += "\n" + content
+                segments[q_no] += " " + content
             else:
                 segments[q_no] = content
             

@@ -18,8 +18,8 @@ SBERT_MODEL_ID = "all-mpnet-base-v2"
 # semantic  → how closely the student's answer mirrors the rubric in meaning.
 # keywords  → whether mandatory vocabulary/concepts appear in the answer.
 DEFAULT_SCORE_WEIGHTS = {
-    "semantic": 0.75,
-    "keywords": 0.25,
+    "semantic": 0.60,
+    "keywords": 0.40,
 }
 
 # ── Keyword matching ─────────────────────────────────────────────────────────
