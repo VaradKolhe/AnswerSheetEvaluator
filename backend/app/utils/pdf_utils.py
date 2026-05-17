@@ -22,9 +22,8 @@ def convert_pdf_to_images(pdf_path: str | Path, output_dir: str | Path, dpi: int
 
     for i in range(len(doc)):
         page = doc.load_page(i)
-        # Increase resolution with Matrix
-        zoom = dpi / 72
-        mat = fitz.Matrix(zoom, zoom)
+        # Use exact Matrix from reference script (1.5x zoom)
+        mat = fitz.Matrix(1.5, 1.5)
         pix = page.get_pixmap(matrix=mat)
         
         image_name = f"page_{i+1}.png"

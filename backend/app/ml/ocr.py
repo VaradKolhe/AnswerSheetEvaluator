@@ -42,14 +42,18 @@ class HandwritingOCR:
     def extract(self, image_path: str | Path) -> str:
         """
         Extract all handwritten text from a document page.
+        EXACTLY mirrors run_ocr from final_answersheet_evaluator.py.
         """
+        # Load image into PIL object as in reference
+        image = Image.open(str(image_path)).convert("RGB")
+        
         messages = [
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "image",
-                        "image": str(image_path),
+                        "image": image,
                         "max_pixels": 768 * 28 * 28,
                     },
                     {
@@ -61,12 +65,11 @@ class HandwritingOCR:
         ]
 
         # Preparation
-        text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        image_inputs, video_inputs = process_vision_info(messages)
+        text_prompt = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        image_inputs, _ = process_vision_info(messages)
         inputs = self.processor(
-            text=[text],
+            text=[text_prompt],
             images=image_inputs,
-            videos=video_inputs,
             padding=True,
             return_tensors="pt",
         ).to(self.device)
@@ -79,11 +82,10 @@ class HandwritingOCR:
                 do_sample=False
             )
         
-        generated_ids_trimmed = [
-            out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-        ]
+        # Match decode logic from reference
         output_text = self.processor.batch_decode(
-            generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+            [generated_ids[0][len(inputs.input_ids[0]):]], 
+            skip_special_tokens=True
         )[0]
         
         # Post-processing: remove accidental coordinate leakage and special tags
