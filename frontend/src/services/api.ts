@@ -1,7 +1,16 @@
 import axios from 'axios';
 import { useAppStore } from '../store/useAppStore';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  // If running in a browser and not on localhost, default to /api proxy
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+    return '/api';
+  }
+  return 'http://localhost:8000';
+};
+
+const API_BASE_URL = getBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
