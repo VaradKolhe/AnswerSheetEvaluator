@@ -58,7 +58,38 @@ const ExamUpload: React.FC = () => {
   const [currentStatus, setCurrentStatus] = useState('');
   const [progress, setProgress] = useState(0);
 
-  // ... rest of logic ...
+  const fetchExam = useCallback(async () => {
+    if (!examId) return;
+    try {
+      const data = await apiService.getExamDetail(examId);
+      setSelectedExam(data);
+    } catch (err) {
+      console.error('Failed to fetch exam', err);
+    }
+  }, [examId, setSelectedExam]);
+
+  useEffect(() => {
+    if (examId) {
+      fetchExam();
+    }
+  }, [examId, fetchExam]);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
+    else if (e.type === "dragleave") setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files) {
+      const pdfFiles = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+      setFiles(prev => [...prev, ...pdfFiles]);
+    }
+  };
 
   const handleUpload = async () => {
     if (!examId || files.length === 0) return;
