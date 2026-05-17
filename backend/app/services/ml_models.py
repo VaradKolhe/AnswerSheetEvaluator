@@ -49,22 +49,9 @@ async def process_full_grading(
     
     aggregated_text = " ".join(all_text_parts)
     
-    print("\n" + "="*80)
-    print("--- DEBUG: FULL RAW AGGREGATED OCR TEXT ---")
-    print(aggregated_text)
-    print("="*80 + "\n")
-    
     # 3. SEGMENT TEXT (Identify which part belongs to which question)
     segmenter = SmartSegmenter(question_count=len(questions))
     segmented_answers = segmenter.segment_text(aggregated_text)
-    
-    print("\n" + "="*80)
-    print("--- DEBUG: COMPLETE SEGMENTATION RESULTS ---")
-    for q_no, content in segmented_answers.items():
-        print(f"\n[QUESTION {q_no}]")
-        print(content)
-        print("-" * 40)
-    print("="*80 + "\n")
     
     # Check if we found ANY markers at all
     any_markers_found = segmenter.markers_found
@@ -127,7 +114,7 @@ async def process_full_grading(
         # ai_marks = min(round(final_score * max_marks * 2) / 2, max_marks)
         ai_marks = min(round(final_relative_score * q["max_marks"] * 2) / 2, q["max_marks"])
         
-        result = {
+        question_results.append({
             "question_id": q["question_id"],
             "question_no": q_no,
             "extracted_answer": answer_to_grade,
@@ -140,14 +127,7 @@ async def process_full_grading(
             "teacher_comment": "",
             "semantic_rationale": sem_rationale,
             "keyword_rationale": kw_rationale
-        }
-
-        print(f"\n--- DEBUG: FULL EVALUATION FOR QUESTION {q_no} ---")
-        import json
-        print(json.dumps(result, indent=2))
-        print("-" * 40)
-
-        question_results.append(result)
+        })
         total_ai_marks += ai_marks
         
     return {
