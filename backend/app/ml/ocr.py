@@ -9,6 +9,7 @@ from __future__ import annotations
 import torch
 import os
 import re
+import gc
 from pathlib import Path
 from PIL import Image
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
@@ -31,7 +32,7 @@ class HandwritingOCR:
         
         self.model = Qwen2VLForConditionalGeneration.from_pretrained(
             model_id, 
-            torch_dtype=torch.bfloat16, 
+            torch_dtype=torch.float16, 
             device_map="auto",
             trust_remote_code=True
         )
@@ -48,11 +49,11 @@ class HandwritingOCR:
                     {
                         "type": "image",
                         "image": str(image_path),
-                        "max_pixels": 1024 * 28 * 28,
+                        "max_pixels": 768 * 28 * 28,
                     },
                     {
                         "type": "text", 
-                        "text": "Transcribe all handwritten text precisely. Output ONLY the text."
+                        "text": "Transcribe all text from this image precisely. Read line by line. Output ONLY the raw transcribed text."
                     },
                 ],
             }
@@ -73,7 +74,7 @@ class HandwritingOCR:
         with torch.no_grad():
             generated_ids = self.model.generate(
                 **inputs, 
-                max_new_tokens=2048,
+                max_new_tokens=1536,
                 do_sample=False
             )
         
@@ -84,11 +85,16 @@ class HandwritingOCR:
             generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )[0]
         
-        # Post-processing: remove accidental coordinate leakage
-        output_text = re.sub(r'\(\d{1,4},\s*\d{1,4}\)', '', output_text).strip()
+        # Post-processing: remove accidental coordinate leakage and special tags
+        output_text = re.sub(r'\(?\d{1,4},\s*\d{1,4}\)?', '', output_text)
+        output_text = re.sub(r'<\|.*?\|>', '', output_text)
+        output_text = output_text.strip()
         
         # Cleanup
         del inputs, generated_ids
-        torch.cuda.empty_cache()
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
         
         return output_text

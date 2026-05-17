@@ -8,7 +8,7 @@ from app.ml.grader import SemanticGrader
 from app.ml.keyword_checker import KeywordChecker
 from app.ml.segmenter import SmartSegmenter
 from app.ml.report import build_report
-from app.ml.config import DEFAULT_SCORE_WEIGHTS
+from app.ml.config import DEFAULT_SCORE_WEIGHTS, IRRELEVANCE_THRESHOLD
 from app.utils.pdf_utils import convert_pdf_to_images
 
 # Singleton instances
@@ -86,51 +86,39 @@ async def process_full_grading(
             grader.score, answer_to_grade, q["expected_answer"]
         )
         
-        # ── SAFETY NET: If meaning is < 20%, nullify keywords ─────────────────
-        is_irrelevant = sem_score < 0.20
+        # ── SCORING LOGIC (Exactly as reference) ──────────────────────────────────
+        is_irrelevant = sem_score < IRRELEVANCE_THRESHOLD
+        
+        keywords = q.get("keywords", [])
+        kw_details = []
         
         if is_irrelevant:
             kw_score = 0.0
-            kw_details = [{"keyword": kw, "found": False} for kw in q["keywords"]]
-            kw_rationale = "⚠️ Answer is semantically irrelevant. Keyword marks nullified."
-        else:
-            # Keyword Score
+            kw_rationale = "⚠️ Severely irrelevant answer. Keyword marks nullified."
+            kw_details = [{"keyword": kw, "found": False} for kw in keywords]
+        elif keywords:
             kw_score, kw_rationale, kw_details = await asyncio.to_thread(
-                checker.check, answer_to_grade, q["keywords"]
+                checker.check, answer_to_grade, keywords
             )
-        
-        # Calculate marks
-        if not q.get("keywords"):
-            # If no keywords, 100% weight on semantic similarity
-            ai_marks = sem_score * q["max_marks"]
-            kw_score = 0.0
+        else:
+            # If no keywords, keywords contribute same as semantic score
+            kw_score = sem_score
             kw_rationale = "No keywords provided. Marks awarded based on semantic meaning only."
             kw_details = []
-        else:
-            # Keyword Score
-            if is_irrelevant:
-                kw_score = 0.0
-                kw_details = [{"keyword": kw, "found": False} for kw in q["keywords"]]
-                kw_rationale = "⚠️ Answer is semantically irrelevant. Keyword marks nullified."
-            else:
-                kw_score, kw_rationale, kw_details = await asyncio.to_thread(
-                    checker.check, answer_to_grade, q["keywords"]
-                )
-            
-            weights = DEFAULT_SCORE_WEIGHTS
-            final_relative_score = (sem_score * weights["semantic"]) + (kw_score * weights["keywords"])
-            ai_marks = final_relative_score * q["max_marks"]
+
+        # ── Final Marks (75/25) ──────────────────────────────────────────────────
+        weights = DEFAULT_SCORE_WEIGHTS
+        final_relative_score = (sem_score * weights["semantic"]) + (kw_score * weights["keywords"])
         
-        # ── 0.5 ROUNDING LOGIC ───────────────────────────────────────────────
-        ai_marks = round(ai_marks * 2) / 2
-        ai_marks = min(ai_marks, q["max_marks"])
+        # ai_marks = min(round(final_score * max_marks * 2) / 2, max_marks)
+        ai_marks = min(round(final_relative_score * q["max_marks"] * 2) / 2, q["max_marks"])
         
         question_results.append({
             "question_id": q["question_id"],
             "question_no": q_no,
             "extracted_answer": answer_to_grade,
-            "matched_keywords": [d["keyword"] for d in kw_details if d["found"]],
-            "missing_keywords": [d["keyword"] for d in kw_details if not d["found"]],
+            "matched_keywords": [d["keyword"] for d in kw_details if d.get("found")],
+            "missing_keywords": [d["keyword"] for d in kw_details if not d.get("found")],
             "ai_marks": ai_marks,
             "final_marks": ai_marks,
             "max_marks": q["max_marks"],

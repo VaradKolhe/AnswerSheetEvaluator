@@ -4,14 +4,15 @@ from typing import List, Dict, Any
 class SmartSegmenter:
     """
     Identifies question boundaries in extracted text to assign blocks 
-    of text to specific questions (e.g., Ans 1, Q2, etc.).
+    of text to specific questions. Ignores OCR noise like "AnsW1", "Anst", 
+    or nested "Question> Answer>".
     """
     
     def __init__(self, question_count: int):
         self.question_count = question_count
-        # Robust pattern from colab_script.py:
-        # - More forgiving about boundaries and optional digit
-        self.marker_pattern = re.compile(r'(?i)(?:ans|answer|q|question)\s*[:\s-]*(\d*)')
+        # This pattern catches "Ans", "Answer", "Q", "Question" followed by optional noise and numbers.
+        # It also looks for these markers after a period or newline to handle fused text.
+        self.marker_pattern = re.compile(r'(?i)(?:\b|\.|\n)\s*(?:ans|answer|q|question)[a-z]*\W*\d*[:\s-]*')
 
     def segment_text(self, aggregated_text: str) -> Dict[int, str]:
         """
@@ -21,29 +22,31 @@ class SmartSegmenter:
         text = aggregated_text.replace('\r\n', '\n').strip()
         
         matches = list(self.marker_pattern.finditer(text))
-        segments = {}
         
         if not matches:
             # If no markers, assume everything is for Question 1
             return {1: text.strip()}
 
+        segments = {}
+        q_no = 1
+        
         for i in range(len(matches)):
             start = matches[i].end()
             end = matches[i+1].start() if i+1 < len(matches) else len(text)
             
-            # The actual question number found by OCR is ignored to prevent 
-            # misalignment (e.g. "AnsW1" or "Ans 25" mistakes).
-            # We strictly assign based on the order of appearance.
-            q_no = i + 1
+            # Capture the content between markers
+            content = text[start:end].strip()
             
-            # Robust separator removal
-            content = text[start:end].strip().strip(':').strip('-').strip()
+            # Basic cleanup of leftovers like "Answer>" or lingering punctuation
+            content = re.sub(r'^[>\W]+', '', content).strip()
             
-            # If we somehow have multiple markers for the same logical position 
-            # (unlikely with this loop), we append.
-            if q_no in segments:
-                segments[q_no] += " " + content
-            else:
+            # Only add if it's not empty (handles consecutive noise markers)
+            if content:
                 segments[q_no] = content
+                q_no += 1
+            elif i == len(matches) - 1:
+                # If the last marker is empty (e.g., student wrote "Ans 3:" but left it blank)
+                segments[q_no] = ""
+                q_no += 1
             
         return segments

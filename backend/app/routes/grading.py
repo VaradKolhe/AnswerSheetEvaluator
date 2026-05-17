@@ -4,7 +4,7 @@ from app.routes.auth import get_current_user
 from app.database import db
 from app.services.ml_models import process_full_grading
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 router = APIRouter(prefix="/grading", tags=["grading"])
@@ -42,7 +42,7 @@ async def run_grading(submission_id: str, current_user: dict = Depends(get_curre
         "total_ai_marks": grading_data["total_ai_marks"],
         "total_final_marks": grading_data["total_ai_marks"],
         "status": "graded",
-        "updated_at": datetime.utcnow(),
+        "updated_at": datetime.now(timezone.utc),
         "metadata": {
             "aggregated_text": grading_data["aggregated_text"],
             "page_images": grading_data["page_images"]
@@ -90,7 +90,7 @@ async def override_grading(submission_id: str, batch_override: BatchGradingOverr
                     "new_marks": override.final_marks,
                     "teacher_comment": override.teacher_comment,
                     "modified_by": current_user["id"],
-                    "timestamp": datetime.utcnow()
+                    "timestamp": datetime.now(timezone.utc)
                 })
                 
                 new_results[idx]["final_marks"] = override.final_marks
@@ -104,7 +104,7 @@ async def override_grading(submission_id: str, batch_override: BatchGradingOverr
             "question_results": new_results,
             "total_final_marks": round(total_final_marks, 2),
             "status": "reviewed",
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.now(timezone.utc)
         }}
     )
     
@@ -126,7 +126,7 @@ async def finalize_grading(submission_id: str, current_user: dict = Depends(get_
         
     await db.grading_results.update_one(
         {"submission_id": submission_id},
-        {"$set": {"status": "finalized", "updated_at": datetime.utcnow()}}
+        {"$set": {"status": "finalized", "updated_at": datetime.now(timezone.utc)}}
     )
     
     await db.submissions.update_one(
