@@ -114,6 +114,26 @@ const GradingStudio: React.FC = () => {
   };
 
   const pdfUrl = getFileUrl();
+  console.log('DEBUG: PDF URL being loaded:', pdfUrl);
+
+  useEffect(() => {
+    // Simple fetch to debug what is actually being returned
+    const checkPdf = async () => {
+      try {
+        const response = await fetch(pdfUrl);
+        console.log('DEBUG: PDF Fetch Status:', response.status);
+        console.log('DEBUG: PDF Content-Type:', response.headers.get('Content-Type'));
+        if (response.headers.get('Content-Type')?.includes('text/html')) {
+          console.error('DEBUG: RECEIVED HTML INSTEAD OF PDF!');
+          const text = await response.text();
+          console.log('DEBUG: HTML Content start:', text.substring(0, 100));
+        }
+      } catch (e) {
+        console.error('DEBUG: Fetch error:', e);
+      }
+    };
+    if (selectedSubmission) checkPdf();
+  }, [pdfUrl, selectedSubmission]);
 
   return (
     <div className="h-[calc(100vh-10rem)] flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 relative">

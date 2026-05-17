@@ -21,10 +21,17 @@ async def get_submission_file(submission_id: str):
     Explicitly serve the PDF file for a submission.
     This bypasses static mounting issues with root_path.
     """
+    print(f"DEBUG: Request for submission file: {submission_id}")
     file_path = os.path.join(UPLOAD_DIR, f"{submission_id}.pdf")
+    print(f"DEBUG: Checking file path: {file_path}")
+    
     if not os.path.exists(file_path):
+        print(f"DEBUG: File NOT FOUND: {file_path}")
+        # List files in directory for debugging
+        print(f"DEBUG: Files in {UPLOAD_DIR}: {os.listdir(UPLOAD_DIR)}")
         raise HTTPException(status_code=404, detail="File not found")
     
+    print(f"DEBUG: File found, serving: {file_path}")
     return FileResponse(
         path=file_path,
         media_type="application/pdf",
