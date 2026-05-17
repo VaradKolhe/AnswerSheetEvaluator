@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.schemas.schemas import ExamCreate, ExamResponse
+from app.schemas.schemas import ExamCreate, ExamUpdate, ExamResponse
 from app.routes.auth import get_current_user
 from app.database import db
 import uuid
@@ -17,6 +17,23 @@ async def create_exam(exam_in: ExamCreate, current_user: dict = Depends(get_curr
     
     await db.exams.insert_one(exam_dict)
     return exam_dict
+
+@router.put("/{exam_id}", response_model=ExamResponse)
+async def update_exam(
+    exam_id: str, 
+    exam_in: ExamUpdate, 
+    current_user: dict = Depends(get_current_user)
+):
+    # Verify ownership
+    exam = await db.exams.find_one({"exam_id": exam_id, "teacher_id": current_user["id"]})
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    
+    update_data = {k: v for k, v in exam_in.dict().items() if v is not None}
+    if update_data:
+        await db.exams.update_one({"exam_id": exam_id}, {"$set": update_data})
+    
+    return await db.exams.find_one({"exam_id": exam_id})
 
 @router.get("/", response_model=List[ExamResponse])
 async def list_exams(current_user: dict = Depends(get_current_user)):

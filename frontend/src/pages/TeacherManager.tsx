@@ -16,6 +16,7 @@ import { useAppStore } from "../store/useAppStore";
 const TeacherManager: React.FC = () => {
   const { exams, setExams, setIsLoading } = useAppStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingExamId, setEditingExamId] = useState<string | null>(null);
   const [newExam, setNewExam] = useState({
     exam_name: "",
     subject: "",
@@ -40,17 +41,43 @@ const TeacherManager: React.FC = () => {
     fetchExams();
   }, [fetchExams]);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiService.createExam(newExam);
+      if (editingExamId) {
+        // Update existing exam (Total marks is calculated from questions)
+        await apiService.updateExam(editingExamId, {
+          exam_name: newExam.exam_name,
+          subject: newExam.subject,
+        });
+      } else {
+        // Create new exam
+        await apiService.createExam(newExam);
+      }
       setIsModalOpen(false);
+      setEditingExamId(null);
       setNewExam({ exam_name: "", subject: "", total_marks: 100 });
       fetchExams();
     } catch (error) {
-      alert("Failed to create exam");
-      console.error("Create exam error", error);
+      alert(editingExamId ? "Failed to update exam" : "Failed to create exam");
+      console.error("Submit exam error", error);
     }
+  };
+
+  const handleEdit = (exam: any) => {
+    setEditingExamId(exam.exam_id);
+    setNewExam({
+      exam_name: exam.exam_name,
+      subject: exam.subject,
+      total_marks: exam.total_marks,
+    });
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingExamId(null);
+    setNewExam({ exam_name: "", subject: "", total_marks: 100 });
   };
 
   const handleDelete = async (examId: string) => {
@@ -81,7 +108,11 @@ const TeacherManager: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setEditingExamId(null);
+            setNewExam({ exam_name: "", subject: "", total_marks: 100 });
+            setIsModalOpen(true);
+          }}
           className="flex items-center gap-2 bg-blue-900 hover:bg-blue-950 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/10"
         >
           <Plus size={20} />
@@ -110,7 +141,10 @@ const TeacherManager: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                <button 
+                  onClick={() => handleEdit(exam)}
+                  className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                >
                   <Edit2 size={18} />
                 </button>
                 <button 
@@ -185,7 +219,11 @@ const TeacherManager: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setEditingExamId(null);
+                setNewExam({ exam_name: "", subject: "", total_marks: 100 });
+                setIsModalOpen(true);
+              }}
               className="mt-4 text-blue-700 font-bold hover:underline"
             >
               Get started by creating an exam
@@ -194,22 +232,22 @@ const TeacherManager: React.FC = () => {
         )}
       </div>
 
-      {/* Create Modal */}
+      {/* Create/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 border border-slate-100 animate-in zoom-in duration-300">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-slate-900">
-                Create New Exam
+                {editingExamId ? "Edit Exam" : "Create New Exam"}
               </h2>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={closeModal}
                 className="p-2 hover:bg-slate-50 rounded-lg text-slate-400"
               >
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleCreate} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700 ml-1">
                   Exam Name
@@ -242,12 +280,13 @@ const TeacherManager: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700 ml-1">
-                  Total Marks
+                  Total Marks {editingExamId && <span className="text-slate-400 text-[10px]">(Calculated from Questions)</span>}
                 </label>
                 <input
                   type="number"
                   required
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none font-semibold transition-all"
+                  disabled={!!editingExamId}
+                  className={`w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none font-semibold transition-all ${editingExamId ? 'opacity-50 cursor-not-allowed' : ''}`}
                   value={newExam.total_marks}
                   onChange={(e) =>
                     setNewExam({
@@ -260,7 +299,7 @@ const TeacherManager: React.FC = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={closeModal}
                   className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
                 >
                   Cancel
@@ -269,7 +308,7 @@ const TeacherManager: React.FC = () => {
                   type="submit"
                   className="flex-1 bg-blue-900 text-white py-3 rounded-xl font-bold hover:bg-blue-950 transition-all shadow-lg shadow-blue-900/10"
                 >
-                  Create Exam
+                  {editingExamId ? "Update Exam" : "Create Exam"}
                 </button>
               </div>
             </form>

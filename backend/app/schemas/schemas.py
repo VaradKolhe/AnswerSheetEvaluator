@@ -32,6 +32,10 @@ class ExamBase(BaseModel):
 class ExamCreate(ExamBase):
     pass
 
+class ExamUpdate(BaseModel):
+    exam_name: Optional[str] = None
+    subject: Optional[str] = None
+
 class ExamResponse(ExamBase):
     exam_id: str
     teacher_id: str

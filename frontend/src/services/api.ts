@@ -71,6 +71,11 @@ export const apiService = {
     return response.data;
   },
 
+  updateExam: async (examId: string, data: any) => {
+    const response = await api.put(`exams/${examId}`, data);
+    return response.data;
+  },
+
   getExamDetail: async (examId: string) => {
     const response = await api.get(`exams/${examId}`);
     return response.data;
