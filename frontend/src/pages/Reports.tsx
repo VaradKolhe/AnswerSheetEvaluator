@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { FileText, Search, Download, GraduationCap, ArrowRight, User, ArrowLeft } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAppStore } from '../store/useAppStore';

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Plus, Trash2, Save, ArrowLeft, HelpCircle, GraduationCap, X } from 'lucide-react';
 import { apiService } from '../services/api';
