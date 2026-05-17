@@ -53,18 +53,33 @@ async def process_full_grading(
     segmenter = SmartSegmenter(question_count=len(questions))
     segmented_answers = segmenter.segment_text(aggregated_text)
     
+    # Check if we found ANY markers at all
+    any_markers_found = len(segmented_answers) > 0
+    
     # 4. Grade each question against its OWN segment
     question_results = []
     total_ai_marks = 0
     
     for q in questions:
         q_no = q["question_no"]
-        # Use segmented text if available, otherwise fallback to full text
-        answer_to_grade = segmented_answers.get(q_no, aggregated_text)
         
-        # Fallback: if segmenter failed (returned empty), use full text
-        if not answer_to_grade.strip():
-            answer_to_grade = aggregated_text
+        # ── SMART ASSIGNMENT LOGIC ───────────────────────────────────────────
+        if any_markers_found:
+            # If the student used markers (Ans 1, etc.), use the specific segment.
+            # If this question number is missing, they probably skipped it (empty).
+            answer_to_grade = segmented_answers.get(q_no, "")
+        else:
+            # If NO markers were found in the whole doc (student just wrote paragraphs),
+            # and there is only 1 question in the exam, assume the whole doc is the answer.
+            if len(questions) == 1:
+                answer_to_grade = aggregated_text
+            else:
+                # Multiple questions but no markers? We can't safely know where one ends.
+                # Use empty text to be safe, or just provide the first chunk of text.
+                answer_to_grade = "" 
+        
+        # Ensure it's a string and trimmed
+        answer_to_grade = str(answer_to_grade).strip()
 
         # Semantic Score
         sem_score, sem_rationale = await asyncio.to_thread(
