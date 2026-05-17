@@ -2,19 +2,17 @@ import axios from 'axios';
 import { useAppStore } from '../store/useAppStore';
 
 const getBaseUrl = () => {
-  // If the user explicitly provided a URL via env var, use it.
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-
-  // Detect if we are on localhost
-  const isLocalhost = typeof window !== 'undefined' && 
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-  // If NOT on localhost (e.g. on AWS IP), we MUST use the /api proxy.
-  if (!isLocalhost) {
+  // 1. If running in a browser and not on localhost, ALWAYS use the /api proxy
+  if (typeof window !== 'undefined' && 
+      window.location.hostname !== 'localhost' && 
+      window.location.hostname !== '127.0.0.1') {
     return '/api';
   }
 
-  // Fallback for local development
+  // 2. If the user explicitly provided a URL via env var (local dev), use it.
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+
+  // 3. Fallback for local machine development
   return 'http://localhost:8000';
 };
 
