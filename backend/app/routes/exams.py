@@ -29,3 +29,21 @@ async def get_exam(exam_id: str, current_user: dict = Depends(get_current_user))
     if not exam:
         raise HTTPException(status_code=404, detail="Exam not found")
     return exam
+
+@router.delete("/{exam_id}")
+async def delete_exam(exam_id: str, current_user: dict = Depends(get_current_user)):
+    # 1. Check if exam exists and belongs to the teacher
+    exam = await db.exams.find_one({"exam_id": exam_id, "teacher_id": current_user["id"]})
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found or unauthorized")
+    
+    # 2. Delete the exam
+    await db.exams.delete_one({"exam_id": exam_id})
+    
+    # 3. Delete associated questions
+    await db.questions.delete_many({"exam_id": exam_id})
+    
+    # 4. Optional: Delete associated submissions (could be many)
+    # await db.submissions.delete_many({"exam_id": exam_id})
+    
+    return {"message": "Exam and associated questions deleted successfully"}

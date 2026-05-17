@@ -5,9 +5,9 @@ Tweak these values to adjust model choices and scoring behaviour.
 
 # ── Model identifiers ────────────────────────────────────────────────────────
 
-# TrOCR variant: 'microsoft/trocr-large-handwritten' for best accuracy,
-# 'microsoft/trocr-base-handwritten' for faster inference.
-TROCR_MODEL_ID = "microsoft/trocr-large-handwritten"
+# Qwen2-VL-2B: Best-in-class vision-language model for full-page OCR.
+# This model fits in a 16GB GPU (like AWS G4dn/G5 or Colab T4).
+QWEN_MODEL_ID = "Qwen/Qwen2-VL-2B-Instruct"
 
 # Sentence-BERT model for semantic similarity.
 # 'all-mpnet-base-v2' is the best general-purpose model.

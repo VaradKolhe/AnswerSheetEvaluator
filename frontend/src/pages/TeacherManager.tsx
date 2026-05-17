@@ -52,6 +52,20 @@ const TeacherManager: React.FC = () => {
     }
   };
 
+  const handleDelete = async (examId: string) => {
+    if (!window.confirm("Are you sure you want to delete this exam? This will also delete all questions associated with it.")) {
+      return;
+    }
+
+    try {
+      await apiService.deleteExam(examId);
+      fetchExams();
+    } catch (error) {
+      alert("Failed to delete exam");
+      console.error("Delete exam error", error);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
@@ -96,7 +110,10 @@ const TeacherManager: React.FC = () => {
                 <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
                   <Edit2 size={18} />
                 </button>
-                <button className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
+                <button 
+                  onClick={() => handleDelete(exam.exam_id)}
+                  className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                >
                   <Trash2 size={18} />
                 </button>
               </div>

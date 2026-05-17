@@ -52,6 +52,11 @@ export const apiService = {
     return response.data;
   },
 
+  deleteExam: async (examId: string) => {
+    const response = await api.delete(`/exams/${examId}`);
+    return response.data;
+  },
+
   // Questions
   saveQuestions: async (questions: any[]) => {
     const response = await api.post('/questions', questions);

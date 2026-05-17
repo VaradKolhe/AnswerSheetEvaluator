@@ -21,3 +21,4 @@ sentencepiece
 accelerate
 protobuf
 timm
+qwen-vl-utils
