@@ -43,6 +43,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Response interceptor for handling errors globally (e.g., 401 Unauthorized)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Token is invalid or expired
+      const { logout, setError } = useAppStore.getState();
+      logout();
+      setError('Session expired. Please login again.');
+      
+      // Optionally redirect to login if not already there
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const apiService = {
   // Auth
   register: async (data: any) => {

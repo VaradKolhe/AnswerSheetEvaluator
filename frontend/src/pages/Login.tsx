@@ -7,10 +7,21 @@ import { apiService } from '../services/api';
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const setAuth = useAppStore((state) => state.setAuth);
+  const globalError = useAppStore((state) => state.error);
+  const clearGlobalError = useAppStore((state) => state.setError);
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  React.useEffect(() => {
+    if (globalError) {
+      setError(globalError);
+      // Clear it from the store so it doesn't persist
+      clearGlobalError(null);
+    }
+  }, [globalError, clearGlobalError]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
