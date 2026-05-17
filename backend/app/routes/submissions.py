@@ -91,3 +91,21 @@ async def get_submission(submission_id: str, current_user: dict = Depends(get_cu
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
     return submission
+
+@router.delete("/{submission_id}")
+async def delete_submission(submission_id: str, current_user: dict = Depends(get_current_user)):
+    submission = await db.submissions.find_one({"submission_id": submission_id})
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    
+    # 1. Delete physical file
+    if os.path.exists(submission["file_path"]):
+        os.remove(submission["file_path"])
+    
+    # 2. Delete from database
+    await db.submissions.delete_one({"submission_id": submission_id})
+    
+    # 3. Delete grading results
+    await db.grading_results.delete_one({"submission_id": submission_id})
+    
+    return {"message": "Submission deleted successfully"}

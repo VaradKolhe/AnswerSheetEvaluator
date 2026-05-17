@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { 
   Search, Filter, ChevronRight, 
   CheckCircle2, Clock, AlertTriangle,
-  ArrowLeft, FileText, Edit2, Check, X
+  ArrowLeft, FileText, Edit2, Check, X, Trash2
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
@@ -47,6 +47,16 @@ const ReviewQueue: React.FC = () => {
       setEditingId(null);
     } catch (error) {
       alert('Failed to update student name');
+    }
+  };
+
+  const handleDeleteSubmission = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) return;
+    try {
+      await apiService.deleteSubmission(id);
+      setSubmissions(submissions.filter(s => s.submission_id !== id));
+    } catch (error) {
+      alert('Failed to delete submission');
     }
   };
 
@@ -185,6 +195,13 @@ const ReviewQueue: React.FC = () => {
                         >
                           Review Marks <ChevronRight size={14} />
                         </Link>
+                        <button 
+                          onClick={() => handleDeleteSubmission(s.submission_id)}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          title="Delete Submission"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                      </div>
                   </td>
                 </tr>

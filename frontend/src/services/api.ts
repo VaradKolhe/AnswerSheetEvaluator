@@ -119,6 +119,11 @@ export const apiService = {
     return response.data;
   },
 
+  deleteSubmission: async (submissionId: string) => {
+    const response = await api.delete(`submissions/${submissionId}`);
+    return response.data;
+  },
+
   // Grading
   runGrading: async (submissionId: string) => {
     const response = await api.post(`grading/run/${submissionId}`);

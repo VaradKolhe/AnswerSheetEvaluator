@@ -102,8 +102,18 @@ const GradingStudio: React.FC = () => {
 
   if (!selectedSubmission || !gradingResult) return null;
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  const pdfUrl = `${API_BASE_URL}/files/${selectedSubmission.submission_id}.pdf`;
+  // Use the same getBaseUrl logic as api.ts to determine if we are in prod
+  const getFileUrl = () => {
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      // Production: Files are served via Nginx at /files/
+      return `/files/${selectedSubmission.submission_id}.pdf`;
+    }
+    // Development: Hit backend directly
+    return `http://localhost:8000/files/${selectedSubmission.submission_id}.pdf`;
+  };
+
+  const pdfUrl = getFileUrl();
 
   return (
     <div className="h-[calc(100vh-10rem)] flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500">
