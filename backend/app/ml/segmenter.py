@@ -12,10 +12,6 @@ def segment_answers(text: str) -> Dict[int, str]:
     
     matches = list(marker_pattern.finditer(text))
     
-    print(f"--- DEBUG: SEGMENTER MATCHES FOUND: {len(matches)} ---")
-    for m in matches:
-        print(f"  Match: '{m.group(0).strip()}' at index {m.start()}")
-    
     if not matches:
         return {1: text.strip()}
 
