@@ -28,6 +28,7 @@ const GradingStudio: React.FC = () => {
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.2);
   const [overrides, setOverrides] = useState<{ [key: string]: { marks: number, comment: string } }>({});
+  const [expandedText, setExpandedText] = useState<{ questionNo: number, text: string } | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!submissionId) return;
@@ -104,19 +105,44 @@ const GradingStudio: React.FC = () => {
 
   // Use the same getBaseUrl logic as api.ts to determine if we are in prod
   const getFileUrl = () => {
+    // 1. If an environment variable is explicitly set, use it to derive the files path
+    if (import.meta.env.VITE_API_URL) {
+      const baseUrl = import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
+      return `${baseUrl}/files/${selectedSubmission.submission_id}.pdf`;
+    }
+
     const host = window.location.hostname;
     if (host !== 'localhost' && host !== '127.0.0.1') {
       // Production: Files are served via Nginx at /files/
       return `/files/${selectedSubmission.submission_id}.pdf`;
     }
-    // Development: Hit backend directly
+    // Development fallback
     return `http://localhost:8000/files/${selectedSubmission.submission_id}.pdf`;
   };
 
   const pdfUrl = getFileUrl();
 
   return (
-    <div className="h-[calc(100vh-10rem)] flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500">
+    <div className="h-[calc(100vh-10rem)] flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 relative">
+      {/* Expanded Text Modal */}
+      {expandedText && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="text-lg font-bold text-slate-900">Question {expandedText.questionNo} Full Extraction</h3>
+              <button onClick={() => setExpandedText(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-8">
+              <div className="text-sm leading-relaxed text-slate-700 font-medium whitespace-pre-wrap">
+                {expandedText.text}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PDF Viewer Panel */}
       <div className="flex-1 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col overflow-hidden shadow-2xl">
         <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 backdrop-blur-md">
@@ -197,9 +223,20 @@ const GradingStudio: React.FC = () => {
 
                 <div className="space-y-4">
                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">OCR Extraction</p>
-                      <div className="p-3 bg-white border border-slate-200 rounded-lg text-xs leading-relaxed font-semibold italic text-slate-600">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">OCR Extraction</p>
+                        <button 
+                          onClick={() => setExpandedText({ questionNo: q.question_no, text: q.extracted_answer })}
+                          className="text-[9px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-tight transition-colors"
+                        >
+                          View Full Text
+                        </button>
+                      </div>
+                      <div className="p-3 bg-white border border-slate-200 rounded-lg text-xs leading-relaxed font-semibold italic text-slate-600 max-h-32 overflow-hidden relative group-hover:max-h-none transition-all duration-300">
                         "{q.extracted_answer}"
+                        {q.extracted_answer.length > 150 && (
+                          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none group-hover:hidden" />
+                        )}
                       </div>
                    </div>
 
