@@ -5,7 +5,10 @@ import os
 
 from app.routes import auth, exams, questions, submissions, grading, reports, analytics
 
-app = FastAPI(title="Smart Grading API V2 - Teacher Centric")
+app = FastAPI(
+    title="Smart Grading API V2 - Teacher Centric",
+    root_path="/api"
+)
 
 # CORS Configuration
 app.add_middleware(
