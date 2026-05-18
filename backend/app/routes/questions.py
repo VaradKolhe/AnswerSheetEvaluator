@@ -38,5 +38,9 @@ async def create_questions(questions_in: List[QuestionCreate], current_user: dic
 
 @router.get("/{exam_id}", response_model=List[QuestionResponse])
 async def list_questions(exam_id: str, current_user: dict = Depends(get_current_user)):
+    exam = await db.exams.find_one({"exam_id": exam_id, "teacher_id": current_user["id"]})
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
     cursor = db.questions.find({"exam_id": exam_id}).sort("question_no", 1)
     return await cursor.to_list(length=100)

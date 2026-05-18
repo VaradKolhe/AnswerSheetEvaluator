@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ChevronLeft, ChevronRight, Save, 
-  CheckCircle2, XCircle, AlertTriangle,
-  MessageSquare, FileText, Download,
+  CheckCircle2,
+  MessageSquare,
   ArrowLeft, ZoomIn, ZoomOut, Check, X
 } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -15,13 +15,30 @@ import { useAppStore } from '../store/useAppStore';
 // Set up PDF worker
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
+const getPdfBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      return '/api';
+    }
+  }
+
+  return 'http://localhost:8000';
+};
+
+const rawPdfBaseUrl = getPdfBaseUrl();
+const PDF_BASE_URL = rawPdfBaseUrl.endsWith('/') ? rawPdfBaseUrl : `${rawPdfBaseUrl}/`;
+
 const GradingStudio: React.FC = () => {
   const { submissionId } = useParams<{ submissionId: string }>();
   const navigate = useNavigate();
   const { 
     selectedSubmission, setSelectedSubmission, 
     gradingResult, setGradingResult,
-    setIsLoading 
+    setIsLoading,
+    token
   } = useAppStore();
 
   const [numPages, setNumPages] = useState<number>(0);
@@ -32,17 +49,24 @@ const GradingStudio: React.FC = () => {
 
   // Computed values
   const pdfUrl = selectedSubmission 
-    ? (import.meta.env.VITE_API_URL || (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
-        ? `/api/submissions/file/${selectedSubmission.submission_id}`
-        : `http://localhost:8000/api/submissions/file/${selectedSubmission.submission_id}`)
+    ? `${PDF_BASE_URL}submissions/file/${selectedSubmission.submission_id}`
     : '';
+
+  const pdfFile = useMemo(() => {
+    if (!pdfUrl) return '';
+    return token
+      ? { url: pdfUrl, httpHeaders: { Authorization: `Bearer ${token}` } }
+      : pdfUrl;
+  }, [pdfUrl, token]);
 
   useEffect(() => {
     // Simple fetch to debug what is actually being returned
     const checkPdf = async () => {
       if (!pdfUrl) return;
       try {
-        const response = await fetch(pdfUrl);
+        const response = await fetch(pdfUrl, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
         const contentType = response.headers.get('Content-Type');
         console.log('DEBUG: PDF Fetch Status:', response.status);
         console.log('DEBUG: PDF Content-Type:', contentType);
@@ -58,7 +82,7 @@ const GradingStudio: React.FC = () => {
       }
     };
     checkPdf();
-  }, [pdfUrl]);
+  }, [pdfUrl, token]);
 
   const fetchData = useCallback(async () => {
     if (!submissionId) return;
@@ -195,7 +219,7 @@ const GradingStudio: React.FC = () => {
         
         <div className="flex-1 overflow-auto p-8 flex justify-center bg-slate-800/50">
           <Document
-            file={pdfUrl}
+            file={pdfFile}
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={(error) => console.error('PDF Load Error:', error)}
             loading={<div className="text-white font-bold animate-pulse">Loading Document...</div>}

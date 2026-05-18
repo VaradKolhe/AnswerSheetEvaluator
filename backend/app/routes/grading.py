@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.schemas import GradingResultResponse, BatchGradingOverride
 from app.routes.auth import get_current_user
+from app.routes.submissions import get_owned_submission
 from app.database import db
 from app.services.ml_models import process_full_grading
 import uuid
@@ -9,11 +10,16 @@ from typing import List
 
 router = APIRouter(prefix="/grading", tags=["grading"])
 
+async def get_owned_grading_result(submission_id: str, current_user: dict):
+    await get_owned_submission(submission_id, current_user)
+    res = await db.grading_results.find_one({"submission_id": submission_id})
+    if not res:
+        raise HTTPException(status_code=404, detail="Grading result not found")
+    return res
+
 @router.post("/run/{submission_id}", response_model=GradingResultResponse)
 async def run_grading(submission_id: str, current_user: dict = Depends(get_current_user)):
-    submission = await db.submissions.find_one({"submission_id": submission_id})
-    if not submission:
-        raise HTTPException(status_code=404, detail="Submission not found")
+    submission = await get_owned_submission(submission_id, current_user)
         
     questions_cursor = db.questions.find({"exam_id": submission["exam_id"]}).sort("question_no", 1)
     questions = await questions_cursor.to_list(length=100)
@@ -64,16 +70,11 @@ async def run_grading(submission_id: str, current_user: dict = Depends(get_curre
 
 @router.get("/{submission_id}", response_model=GradingResultResponse)
 async def get_grading_result(submission_id: str, current_user: dict = Depends(get_current_user)):
-    res = await db.grading_results.find_one({"submission_id": submission_id})
-    if not res:
-        raise HTTPException(status_code=404, detail="Grading result not found")
-    return res
+    return await get_owned_grading_result(submission_id, current_user)
 
 @router.put("/override/{submission_id}", response_model=GradingResultResponse)
 async def override_grading(submission_id: str, batch_override: BatchGradingOverride, current_user: dict = Depends(get_current_user)):
-    res = await db.grading_results.find_one({"submission_id": submission_id})
-    if not res:
-        raise HTTPException(status_code=404, detail="Grading result not found")
+    res = await get_owned_grading_result(submission_id, current_user)
 
     new_results = res["question_results"]
     audit_logs = []
@@ -120,9 +121,7 @@ async def override_grading(submission_id: str, batch_override: BatchGradingOverr
 
 @router.post("/finalize/{submission_id}")
 async def finalize_grading(submission_id: str, current_user: dict = Depends(get_current_user)):
-    res = await db.grading_results.find_one({"submission_id": submission_id})
-    if not res:
-        raise HTTPException(status_code=404, detail="Grading result not found")
+    await get_owned_grading_result(submission_id, current_user)
         
     await db.grading_results.update_one(
         {"submission_id": submission_id},

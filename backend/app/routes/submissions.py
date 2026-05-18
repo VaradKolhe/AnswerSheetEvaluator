@@ -15,14 +15,32 @@ UPLOAD_DIR = "uploads"
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 
+async def get_owned_submission(submission_id: str, current_user: dict):
+    submission = await db.submissions.find_one({"submission_id": submission_id})
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    exam = await db.exams.find_one({
+        "exam_id": submission["exam_id"],
+        "teacher_id": current_user["id"]
+    })
+    if not exam:
+        raise HTTPException(status_code=404, detail="Submission not found or unauthorized")
+
+    return submission
+
 @router.get("/file/{submission_id}", response_class=FileResponse)
-async def get_submission_file(submission_id: str):
+async def get_submission_file(
+    submission_id: str,
+    current_user: dict = Depends(get_current_user)
+):
     """
     Explicitly serve the PDF file for a submission.
     This bypasses static mounting issues with root_path.
     """
     print(f"DEBUG: Request for submission file: {submission_id}")
-    file_path = os.path.join(UPLOAD_DIR, f"{submission_id}.pdf")
+    submission = await get_owned_submission(submission_id, current_user)
+    file_path = submission.get("file_path") or os.path.join(UPLOAD_DIR, f"{submission_id}.pdf")
     print(f"DEBUG: Checking file path: {file_path}")
     
     if not os.path.exists(file_path):
@@ -35,7 +53,7 @@ async def get_submission_file(submission_id: str):
     return FileResponse(
         path=file_path,
         media_type="application/pdf",
-        filename=f"{submission_id}.pdf"
+        filename=submission.get("original_filename") or f"{submission_id}.pdf"
     )
 
 @router.post("/upload/{exam_id}", response_model=List[SubmissionResponse])
@@ -87,9 +105,7 @@ async def update_student(
     update_in: StudentUpdate,
     current_user: dict = Depends(get_current_user)
 ):
-    submission = await db.submissions.find_one({"submission_id": submission_id})
-    if not submission:
-        raise HTTPException(status_code=404, detail="Submission not found")
+    await get_owned_submission(submission_id, current_user)
     
     await db.submissions.update_one(
         {"submission_id": submission_id},
@@ -106,25 +122,25 @@ async def update_student(
 
 @router.get("/exam/{exam_id}", response_model=List[SubmissionResponse])
 async def list_submissions(exam_id: str, current_user: dict = Depends(get_current_user)):
+    exam = await db.exams.find_one({"exam_id": exam_id, "teacher_id": current_user["id"]})
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
     cursor = db.submissions.find({"exam_id": exam_id})
     return await cursor.to_list(length=100)
 
 @router.get("/{submission_id}", response_model=SubmissionResponse)
 async def get_submission(submission_id: str, current_user: dict = Depends(get_current_user)):
-    submission = await db.submissions.find_one({"submission_id": submission_id})
-    if not submission:
-        raise HTTPException(status_code=404, detail="Submission not found")
-    return submission
+    return await get_owned_submission(submission_id, current_user)
 
 @router.delete("/{submission_id}")
 async def delete_submission(submission_id: str, current_user: dict = Depends(get_current_user)):
-    submission = await db.submissions.find_one({"submission_id": submission_id})
-    if not submission:
-        raise HTTPException(status_code=404, detail="Submission not found")
+    submission = await get_owned_submission(submission_id, current_user)
     
     # 1. Delete physical file
-    if os.path.exists(submission["file_path"]):
-        os.remove(submission["file_path"])
+    file_path = submission.get("file_path") or os.path.join(UPLOAD_DIR, f"{submission_id}.pdf")
+    if os.path.exists(file_path):
+        os.remove(file_path)
     
     # 2. Delete from database
     await db.submissions.delete_one({"submission_id": submission_id})

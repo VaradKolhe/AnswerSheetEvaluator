@@ -25,7 +25,7 @@ app.add_middleware(
     allow_credentials=False, # Must be False when allow_origins is ["*"]
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["Content-Length", "Content-Range"],
+    expose_headers=["Content-Length", "Content-Range", "Content-Disposition"],
 )
 
 # Ensure upload directory exists

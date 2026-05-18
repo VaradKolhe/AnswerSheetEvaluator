@@ -14,6 +14,9 @@ async def get_student_report(submission_id: str, current_user: dict = Depends(ge
         raise HTTPException(status_code=404, detail="Grading result not found")
         
     exam = await db.exams.find_one({"exam_id": grading_result["exam_id"]})
+    if not exam or exam.get("teacher_id") != current_user["id"]:
+        raise HTTPException(status_code=404, detail="Report not found or unauthorized")
+
     classroom = await db.classrooms.find_one({"classroom_id": exam["classroom_id"]})
     
     # Re-generate PDF every time for latest comments/marks
