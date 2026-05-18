@@ -13,7 +13,7 @@ import { apiService } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 
 // Set up PDF worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 const GradingStudio: React.FC = () => {
   const { submissionId } = useParams<{ submissionId: string }>();
@@ -43,7 +43,14 @@ const GradingStudio: React.FC = () => {
       if (!pdfUrl) return;
       try {
         const response = await fetch(pdfUrl);
-        if (response.headers.get('Content-Type')?.includes('text/html')) {
+        const contentType = response.headers.get('Content-Type');
+        console.log('DEBUG: PDF Fetch Status:', response.status);
+        console.log('DEBUG: PDF Content-Type:', contentType);
+        
+        const text = await response.text();
+        console.log('DEBUG: First 10 chars of response:', text.substring(0, 10));
+        
+        if (contentType?.includes('text/html') || text.startsWith('<!doctype')) {
           console.error('DEBUG: RECEIVED HTML INSTEAD OF PDF!');
         }
       } catch (e) {
