@@ -87,7 +87,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
               </div>
               <div className="flex flex-col">
                 <h1 className="text-sm font-bold text-slate-900">Main Menu</h1>
-                <p className="text-[10px] text-slate-400 font-medium">Academic Year 2023-24</p>
+                <p className="text-[10px] text-slate-400 font-medium">Academic Year 2026-27</p>
               </div>
             </div>
           </div>

@@ -46,6 +46,7 @@ const GradingStudio: React.FC = () => {
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.2);
   const [overrides, setOverrides] = useState<{ [key: string]: { marks: number, comment: string } }>({});
+  const [markErrors, setMarkErrors] = useState<{ [key: string]: string }>({});
   const [expandedText, setExpandedText] = useState<{ questionNo: number, text: string } | null>(null);
 
   // Computed values
@@ -111,6 +112,7 @@ const GradingStudio: React.FC = () => {
         initialOverrides[q.question_id] = { marks: q.final_marks, comment: q.teacher_comment };
       });
       setOverrides(initialOverrides);
+      setMarkErrors({});
     } catch (error) {
       console.error('Failed to fetch grading studio data', error);
     } finally {
@@ -128,7 +130,23 @@ const GradingStudio: React.FC = () => {
     setNumPages(numPages);
   };
 
-  const handleOverrideChange = (qId: string, field: 'marks' | 'comment', value: any) => {
+  const validateMarks = (marks: number, maxMarks: number) => {
+    if (Number.isNaN(marks)) return 'Enter a valid mark.';
+    if (marks < 0) return 'Marks cannot be negative.';
+    if (marks > maxMarks) return `Marks cannot exceed ${maxMarks}.`;
+    return '';
+  };
+
+  const handleOverrideChange = (qId: string, field: 'marks' | 'comment', value: any, maxMarks?: number) => {
+    if (field === 'marks' && typeof maxMarks === 'number') {
+      const error = validateMarks(value, maxMarks);
+      setMarkErrors((prev) => {
+        if (error) return { ...prev, [qId]: error };
+        const { [qId]: _removed, ...rest } = prev;
+        return rest;
+      });
+    }
+
     setOverrides({
       ...overrides,
       [qId]: { ...overrides[qId], [field]: value }
@@ -137,6 +155,11 @@ const GradingStudio: React.FC = () => {
 
   const saveOverrides = async () => {
     if (!submissionId) return;
+    if (Object.keys(markErrors).length > 0) {
+      alert('Please fix invalid marks before saving.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const payload = Object.entries(overrides).map(([qId, data]) => ({
@@ -156,6 +179,11 @@ const GradingStudio: React.FC = () => {
 
   const finalize = async () => {
     if (!submissionId) return;
+    if (Object.keys(markErrors).length > 0) {
+      alert('Please fix invalid marks before finalizing.');
+      return;
+    }
+
     if (!confirm('Are you sure? This will finalize the marks and lock the submission.')) return;
     try {
       await apiService.finalizeGrading(submissionId);
@@ -166,6 +194,7 @@ const GradingStudio: React.FC = () => {
   };
 
   if (!selectedSubmission || !gradingResult) return null;
+  const hasInvalidMarks = Object.keys(markErrors).length > 0;
 
   return (
     <div className="h-[calc(100vh-10rem)] flex flex-col lg:flex-row gap-6 animate-in fade-in duration-500 relative">
@@ -311,13 +340,23 @@ const GradingStudio: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <input 
                         type="number" 
+                        min={0}
                         max={q.max_marks}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-blue-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all shadow-sm"
+                        className={`w-full px-3 py-2 bg-white border rounded-lg text-sm font-bold outline-none transition-all shadow-sm ${
+                          markErrors[q.question_id]
+                            ? 'border-rose-300 text-rose-700 focus:ring-2 focus:ring-rose-500 focus:border-transparent'
+                            : 'border-slate-200 text-blue-900 focus:ring-2 focus:ring-blue-600 focus:border-transparent'
+                        }`}
                         value={overrides[q.question_id]?.marks}
-                        onChange={(e) => handleOverrideChange(q.question_id, 'marks', Number(e.target.value))}
+                        onChange={(e) => handleOverrideChange(q.question_id, 'marks', Number(e.target.value), q.max_marks)}
                       />
                       <span className="text-[10px] font-bold text-slate-400">/ {q.max_marks}</span>
                     </div>
+                    {markErrors[q.question_id] && (
+                      <p className="text-[10px] font-bold text-rose-600 uppercase tracking-tight">
+                        {markErrors[q.question_id]}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
                     <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-widest mb-1">AI Suggestion</span>
@@ -343,14 +382,15 @@ const GradingStudio: React.FC = () => {
           <div className="p-6 border-t border-slate-200 bg-white space-y-3">
              <button 
                 onClick={saveOverrides}
-                className="w-full flex items-center justify-center gap-2 border border-slate-200 text-slate-600 hover:bg-slate-50 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-sm"
+                disabled={hasInvalidMarks}
+                className="w-full flex items-center justify-center gap-2 border border-slate-200 text-slate-600 hover:bg-slate-50 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
              >
                 <Save size={16} /> Save Progress
              </button>
              <button 
                 onClick={finalize}
                 className="w-full flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-950 text-white py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-blue-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={gradingResult.status === 'finalized'}
+                disabled={gradingResult.status === 'finalized' || hasInvalidMarks}
              >
                 <CheckCircle2 size={16} />
                 {gradingResult.status === 'finalized' ? 'Already Finalized' : 'Submit Final Grade'}
