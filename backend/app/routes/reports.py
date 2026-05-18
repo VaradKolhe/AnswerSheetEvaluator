@@ -17,7 +17,16 @@ async def get_student_report(submission_id: str, current_user: dict = Depends(ge
     if not exam or exam.get("teacher_id") != current_user["id"]:
         raise HTTPException(status_code=404, detail="Report not found or unauthorized")
 
-    classroom = await db.classrooms.find_one({"classroom_id": exam["classroom_id"]})
+    classroom = None
+    classroom_id = exam.get("classroom_id")
+    if classroom_id:
+        classroom = await db.classrooms.find_one({"classroom_id": classroom_id})
+
+    if not classroom:
+        classroom = {
+            "classroom_name": "N/A",
+            "subject": exam.get("subject", "N/A")
+        }
     
     # Re-generate PDF every time for latest comments/marks
     report_path = await generate_student_report(grading_result, exam, classroom)
