@@ -47,15 +47,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('DEBUG: API Error:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      data: error.response?.data,
-      headers: error.response?.headers,
-      message: error.message
-    });
-
     if (error.response && error.response.status === 401) {
       // Token is invalid or expired
       const { logout, setError } = useAppStore.getState();
