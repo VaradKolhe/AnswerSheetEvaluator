@@ -4,12 +4,10 @@ import {
   LayoutDashboard, 
   Users,
   FileText,
-  Settings,
   LogOut,
   Menu,
   X,
-  ChevronRight,
-  Loader2
+  ChevronRight
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -103,16 +101,6 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
               />
             ))}
           </nav>
-
-          <div className="p-4 space-y-1 border-t border-slate-100">
-             <Link
-                to="/settings"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all"
-              >
-                <Settings size={20} className="text-slate-400" />
-                <span className="text-sm">Settings</span>
-              </Link>
-          </div>
 
           <div className="p-4 bg-slate-50/50 border-t border-slate-100">
             <div className="flex items-center gap-3 px-2 py-2">

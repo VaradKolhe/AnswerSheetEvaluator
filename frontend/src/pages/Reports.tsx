@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { FileText, Search, Download, GraduationCap, ArrowRight, User, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FileText, Search, Download, ArrowRight, ArrowLeft, ExternalLink } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 
@@ -126,7 +127,7 @@ const Reports: React.FC = () => {
                 <tr className="bg-slate-50 border-b border-slate-200">
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Student Name</th>
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Download</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Report</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -149,13 +150,22 @@ const Reports: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       {s.status === 'finalized' ? (
-                        <button 
-                          onClick={() => handleDownload(s.submission_id, s.student_name)}
-                          className="p-2 text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
-                          title="Download Report"
-                        >
-                          <Download size={20} />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            to={`/report/${s.submission_id}`}
+                            className="p-2 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+                            title="View Report"
+                          >
+                            <ExternalLink size={20} />
+                          </Link>
+                          <button 
+                            onClick={() => handleDownload(s.submission_id, s.student_name)}
+                            className="p-2 text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+                            title="Download Report"
+                          >
+                            <Download size={20} />
+                          </button>
+                        </div>
                       ) : (
                         <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest px-2">Pending</span>
                       )}

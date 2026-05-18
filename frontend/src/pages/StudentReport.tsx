@@ -28,7 +28,7 @@ const StudentReport: React.FC = () => {
          const classroomData = await (apiService as any).getClassroomDetail(examData.classroom_id);
          setClassroom(classroomData);
       } else {
-         setClassroom({ name: 'Default Classroom' }); // Fallback
+         setClassroom({ classroom_name: 'N/A' }); // Fallback
       }
     } catch (error) {
       console.error('Failed to fetch report data', error);
@@ -59,17 +59,18 @@ const StudentReport: React.FC = () => {
     }
   };
 
-  if (!gradingResult || !selectedExam || !classroom) return null;
+  if (!submissionId || !gradingResult || !selectedExam || !classroom) return null;
 
   const percentage = (gradingResult.total_final_marks / selectedExam.total_marks) * 100;
   const isPass = percentage >= 40;
+  const stampId = submissionId.split('-')[0].toUpperCase();
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link 
-            to={`/exam/${selectedExam.exam_id}/review`}
+            to={`/teacher-manager/exam/${selectedExam.exam_id}/review`}
             className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all"
           >
             <ArrowLeft size={20} />
@@ -178,7 +179,7 @@ const StudentReport: React.FC = () => {
 
         {/* Report Footer */}
         <div className="px-10 py-6 bg-muted/30 border-t border-border flex justify-between items-center">
-           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Digital Stamp: AUTH-{submissionId.split('-')[0].toUpperCase()}</p>
+           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Digital Stamp: AUTH-{stampId}</p>
            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">GradeAssist AI-Verification Active</p>
         </div>
       </div>
