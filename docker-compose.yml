@@ -3,7 +3,8 @@ services:
     build: ./backend
     # No direct host ports, accessed via nginx
     environment:
-      - MONGODB_URL=mongodb://mongodb:27017
+      - MONGODB_URL=${MONGODB_URL:-mongodb://mongodb:27017}
+      - SECRET_KEY=${SECRET_KEY}
       - TIMEOUT=600 
       - HF_TOKEN=${HF_TOKEN}
     deploy:
