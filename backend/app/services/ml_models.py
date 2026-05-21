@@ -117,6 +117,7 @@ async def process_full_grading(
         question_results.append({
             "question_id": q["question_id"],
             "question_no": q_no,
+            "question_text": q["question_text"],
             "extracted_answer": answer_to_grade,
             "matched_keywords": [d["keyword"] for d in kw_details if d.get("found")],
             "missing_keywords": [d["keyword"] for d in kw_details if not d.get("found")],

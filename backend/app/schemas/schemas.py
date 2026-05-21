@@ -78,6 +78,7 @@ class StudentUpdate(BaseModel):
 class QuestionGradingResult(BaseModel):
     question_id: str
     question_no: int
+    question_text: str
     extracted_answer: str
     matched_keywords: List[str]
     missing_keywords: List[str]

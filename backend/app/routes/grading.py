@@ -15,6 +15,17 @@ async def get_owned_grading_result(submission_id: str, current_user: dict):
     res = await db.grading_results.find_one({"submission_id": submission_id})
     if not res:
         raise HTTPException(status_code=404, detail="Grading result not found")
+    
+    # Proactively inject question_text if missing (for legacy records)
+    needs_update = any("question_text" not in q for q in res.get("question_results", []))
+    if needs_update:
+        questions_cursor = db.questions.find({"exam_id": res["exam_id"]})
+        questions_map = {q["question_id"]: q["question_text"] for q in await questions_cursor.to_list(length=100)}
+        
+        for q_res in res["question_results"]:
+            if "question_text" not in q_res:
+                q_res["question_text"] = questions_map.get(q_res["question_id"], "Question text not found.")
+    
     return res
 
 @router.post("/run/{submission_id}", response_model=GradingResultResponse)

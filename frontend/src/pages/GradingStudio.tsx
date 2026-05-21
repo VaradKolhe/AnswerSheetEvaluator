@@ -298,6 +298,13 @@ const GradingStudio: React.FC = () => {
                   </div>
                 </div>
 
+                {q.question_text && (
+                  <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-lg">
+                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Question Prompt</p>
+                    <p className="text-xs font-bold text-slate-800 leading-relaxed">{q.question_text}</p>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                    <div className="space-y-1">
                       <div className="flex items-center justify-between">
