@@ -36,11 +36,15 @@ curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dear
 sudo apt-get update
 sudo apt-get install -y nvidia-container-toolkit
 
-# 5. Restart Docker to apply changes
+# 5. Enable and start NVIDIA persistence daemon (prevents runc mount errors)
+echo "--- Starting NVIDIA Persistence Daemon ---"
+sudo systemctl enable --now nvidia-persistenced
+
+# 6. Restart Docker to apply changes
 sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
 
-# 6. Final verification
+# 7. Final verification
 echo "--- Verification ---"
 nvidia-smi
 sudo docker run --rm --runtime=nvidia --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi

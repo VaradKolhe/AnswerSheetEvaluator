@@ -1,12 +1,3 @@
-"""
-utils/image_utils.py
-Image loading and preprocessing helpers for TrOCR input.
-
-Key improvement: ruled notebook lines (horizontal blue lines, red margin)
-are removed via HSV colour masking BEFORE binarisation so TrOCR only
-sees handwritten ink, not notebook grid artefacts.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -16,7 +7,6 @@ import numpy as np
 from PIL import Image
 
 from app.ml.config import IMAGE_MAX_DIM
-
 
 def preprocess_image(image_path: str | Path) -> Image.Image:
     """
